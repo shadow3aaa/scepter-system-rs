@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use eframe::egui::{self, Context, RichText};
+use eframe::egui::{self, Color32, Context, RichText};
+
+pub const COLOR_DISABLED: Color32 = Color32::from_rgb(189, 189, 189);
 
 macro_rules! add_ttf {
     ($fonts: expr, $fname: literal, $ftype: literal) => {
@@ -47,6 +49,8 @@ pub fn set_font(context: &Context) {
         .push("MapleMonoCN-Regular".to_owned());
 
     context.set_fonts(fonts);
+
+    egui_material_icons::initialize(context);
 }
 
 pub fn label_text(text: impl AsRef<str>) -> RichText {

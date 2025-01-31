@@ -17,15 +17,24 @@ impl NavigationController {
         }
     }
 
+    pub fn set_current_page(&mut self, page: Box<dyn Page>) {
+        self.pages.clear();
+        self.pages.push(page);
+    }
+
     pub fn current_page(&mut self) -> &mut Box<dyn Page> {
         self.pages.last_mut().unwrap()
     }
 
-    pub fn push_page(&mut self, page: Box<dyn Page>) {
+    pub fn push(&mut self, page: Box<dyn Page>) {
         self.pages.push(page);
     }
 
-    pub fn pop_page(&mut self) {
+    pub fn pop(&mut self) {
         self.pages.pop();
+    }
+
+    pub fn len(&self) -> usize {
+        self.pages.len()
     }
 }
