@@ -11,7 +11,7 @@ use font::{COLOR_DISABLED, label_text, set_font};
 use page::{NavigationController, Page, home::HomePage};
 
 pub struct App {
-    nav_controller: NavigationController,
+    nav_controller: Box<NavigationController>,
 }
 
 impl App {
@@ -23,7 +23,7 @@ impl App {
     }
 
     fn show_page(&mut self, ui: &mut Ui) {
-        self.nav_controller.current_page().ui(ui);
+        self.nav_controller.ui(ui);
     }
 }
 
