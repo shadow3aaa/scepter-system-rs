@@ -7,7 +7,6 @@ use super::Page;
 #[derive(Default)]
 pub struct HomePage {}
 
-
 impl Page for HomePage {
     fn ui(&mut self, ui: &mut Ui) {
         ui.vertical_centered(|ui| {

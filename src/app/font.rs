@@ -2,14 +2,12 @@ use std::sync::Arc;
 
 use eframe::egui::{self, Context, RichText};
 
-macro_rules! add_font {
-    ($fonts: expr, $ftype: literal) => {
+macro_rules! add_ttf {
+    ($fonts: expr, $fname: literal, $ftype: literal) => {
         $fonts.font_data.insert(
-            format!("MapleMono-{}", $ftype),
+            concat!($fname, "-", $ftype).to_owned(),
             Arc::new(egui::FontData::from_static(include_bytes!(concat!(
-                "../../MapleMono-CN/MapleMonoCN-",
-                $ftype,
-                ".ttf"
+                "../../", $fname, "/", $fname, "-", $ftype, ".ttf"
             )))),
         );
     };
@@ -18,36 +16,41 @@ macro_rules! add_font {
 pub fn set_font(context: &Context) {
     let mut fonts = egui::FontDefinitions::default();
 
-    add_font!(fonts, "Regular");
-    add_font!(fonts, "Bold");
-    add_font!(fonts, "Light");
-    add_font!(fonts, "Medium");
-    add_font!(fonts, "SemiBold");
-    add_font!(fonts, "Thin");
-    add_font!(fonts, "BoldItalic");
-    add_font!(fonts, "Italic");
-    add_font!(fonts, "LightItalic");
-    add_font!(fonts, "MediumItalic");
-    add_font!(fonts, "SemiBoldItalic");
-    add_font!(fonts, "ThinItalic");
-    add_font!(fonts, "ExtraBold");
-    add_font!(fonts, "ExtraBoldItalic");
-    add_font!(fonts, "ExtraLight");
-    add_font!(fonts, "ExtraLightItalic");
+    add_ttf!(fonts, "MapleMonoCN", "Regular");
+    add_ttf!(fonts, "MapleMonoCN", "Bold");
+    add_ttf!(fonts, "MapleMonoCN", "Light");
+    add_ttf!(fonts, "MapleMonoCN", "Medium");
+    add_ttf!(fonts, "MapleMonoCN", "SemiBold");
+    add_ttf!(fonts, "MapleMonoCN", "Thin");
+    add_ttf!(fonts, "MapleMonoCN", "BoldItalic");
+    add_ttf!(fonts, "MapleMonoCN", "Italic");
+    add_ttf!(fonts, "MapleMonoCN", "LightItalic");
+    add_ttf!(fonts, "MapleMonoCN", "MediumItalic");
+    add_ttf!(fonts, "MapleMonoCN", "SemiBoldItalic");
+    add_ttf!(fonts, "MapleMonoCN", "ThinItalic");
+    add_ttf!(fonts, "MapleMonoCN", "ExtraBold");
+    add_ttf!(fonts, "MapleMonoCN", "ExtraBoldItalic");
+    add_ttf!(fonts, "MapleMonoCN", "ExtraLight");
+    add_ttf!(fonts, "MapleMonoCN", "ExtraLightItalic");
+    add_ttf!(fonts, "NotoColorEmoji", "Regular");
 
     fonts
         .families
         .entry(egui::FontFamily::Proportional)
         .or_default()
-        .insert(0, "MapleMono-Regular".to_owned());
+        .insert(0, "MapleMonoCN-Regular".to_owned());
 
     fonts
         .families
         .entry(egui::FontFamily::Monospace)
         .or_default()
-        .push("MapleMono-Regular".to_owned());
+        .push("MapleMonoCN-Regular".to_owned());
 
     context.set_fonts(fonts);
+}
+
+pub fn label_text(text: impl AsRef<str>) -> RichText {
+    RichText::new(text.as_ref()).size(15.0)
 }
 
 pub fn heading_text(text: impl AsRef<str>) -> RichText {
