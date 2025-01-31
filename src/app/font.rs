@@ -1,14 +1,16 @@
 use std::sync::Arc;
 
-use eframe::egui::{self, Context};
+use eframe::egui::{self, Context, RichText};
 
 macro_rules! add_font {
     ($fonts: expr, $ftype: literal) => {
         $fonts.font_data.insert(
             format!("MapleMono-{}", $ftype),
-            Arc::new(egui::FontData::from_static(include_bytes!(
-                concat!("../../MapleMono-CN/MapleMonoCN-", $ftype, ".ttf")
-            ))),
+            Arc::new(egui::FontData::from_static(include_bytes!(concat!(
+                "../../MapleMono-CN/MapleMonoCN-",
+                $ftype,
+                ".ttf"
+            )))),
         );
     };
 }
@@ -46,4 +48,12 @@ pub fn set_font(context: &Context) {
         .push("MapleMono-Regular".to_owned());
 
     context.set_fonts(fonts);
+}
+
+pub fn heading_text(text: impl AsRef<str>) -> RichText {
+    RichText::new(text.as_ref()).heading().size(30.0).strong()
+}
+
+pub fn body_text(text: impl AsRef<str>) -> RichText {
+    RichText::new(text.as_ref()).size(20.0)
 }

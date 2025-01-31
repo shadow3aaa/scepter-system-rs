@@ -2,23 +2,23 @@
 
 mod app;
 
-use eframe::egui;
 use app::App;
+use eframe::egui;
 
 fn main() -> eframe::Result {
     env_logger::init();
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default().with_inner_size([320.0, 240.0]),
+        viewport: egui::ViewportBuilder::default().with_inner_size([640.0, 480.0]),
         ..Default::default()
     };
     eframe::run_native(
-        "My egui App",
+        "The Scepter System",
         options,
-        Box::new(|cc| {
+        Box::new(|context| {
             // This gives us image support:
-            egui_extras::install_image_loaders(&cc.egui_ctx);
+            egui_extras::install_image_loaders(&context.egui_ctx);
 
-            let app = App::setup(cc);
+            let app = App::setup(context);
             Ok(Box::new(app))
         }),
     )
