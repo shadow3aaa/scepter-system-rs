@@ -3,10 +3,10 @@ mod page;
 
 use eframe::{
     CreationContext,
-    egui::{self, Ui},
+    egui::{self, Theme, Ui},
 };
 
-use egui_material_icons::icons::{ICON_ARROW_BACK, ICON_HOME};
+use egui_material_icons::icons::{ICON_ARROW_BACK, ICON_DARK_MODE, ICON_HOME, ICON_LIGHT_MODE};
 use font::{COLOR_DISABLED, label_text, set_font};
 use page::{NavigationController, home::HomePage};
 
@@ -18,7 +18,7 @@ impl App {
     pub fn setup(context: &CreationContext<'_>) -> Self {
         set_font(&context.egui_ctx);
         Self {
-            nav_controller: NavigationController::new(Box::new(HomePage::default())),
+            nav_controller: NavigationController::new(Box::new(HomePage)),
         }
     }
 
@@ -46,13 +46,26 @@ impl eframe::App for App {
                     label_text(ICON_ARROW_BACK)
                 };
 
+                let theme_button_label = if ui.style_mut().visuals.dark_mode {
+                    label_text(ICON_LIGHT_MODE)
+                } else {
+                    label_text(ICON_DARK_MODE)
+                };
+
                 if ui.button(home_button_label).clicked() && !is_root_page {
-                    self.nav_controller
-                        .set_current_page(Box::new(HomePage::default()));
+                    self.nav_controller.set_current_page(Box::new(HomePage));
                 }
 
                 if ui.button(back_button_label).clicked() && !is_root_page {
                     self.nav_controller.pop();
+                }
+
+                if ui.button(theme_button_label).clicked() {
+                    ctx.set_theme(if ui.style_mut().visuals.dark_mode {
+                        Theme::Light
+                    } else {
+                        Theme::Dark
+                    });
                 }
             });
         });
