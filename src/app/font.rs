@@ -54,7 +54,7 @@ pub fn set_font(context: &Context) {
 }
 
 pub fn label_text(text: impl AsRef<str>) -> RichText {
-    RichText::new(text.as_ref()).size(15.0)
+    RichText::new(text.as_ref()).size(18.0)
 }
 
 pub fn heading_text(text: impl AsRef<str>) -> RichText {
@@ -62,5 +62,5 @@ pub fn heading_text(text: impl AsRef<str>) -> RichText {
 }
 
 pub fn body_text(text: impl AsRef<str>) -> RichText {
-    RichText::new(text.as_ref()).size(20.0)
+    RichText::new(text.as_ref())
 }
