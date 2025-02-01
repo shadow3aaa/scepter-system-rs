@@ -48,9 +48,9 @@ pub fn set_font(context: &Context) {
         .or_default()
         .push("MapleMonoCN-Regular".to_owned());
 
-    context.set_fonts(fonts);
+    egui_material_icons::add_to_fonts(&mut fonts);
 
-    egui_material_icons::initialize(context);
+    context.set_fonts(fonts);
 }
 
 pub fn label_text(text: impl AsRef<str>) -> RichText {

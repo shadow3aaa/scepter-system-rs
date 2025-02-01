@@ -8,7 +8,7 @@ use eframe::{
 
 use egui_material_icons::icons::{ICON_ARROW_BACK, ICON_HOME};
 use font::{COLOR_DISABLED, label_text, set_font};
-use page::{NavigationController, Page, home::HomePage};
+use page::{NavigationController, home::HomePage};
 
 pub struct App {
     nav_controller: Box<NavigationController>,
