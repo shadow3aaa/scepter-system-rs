@@ -903,6 +903,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "egui-snarl"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93d55cf28e422c85145b777e4ba86c0b8f84eb86ddbce1bd86f439a94caf3754"
+dependencies = [
+ "egui",
+ "slab",
+]
+
+[[package]]
 name = "egui-wgpu"
 version = "0.30.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2517,6 +2527,7 @@ name = "scepter-system-rs"
 version = "0.1.0"
 dependencies = [
  "eframe",
+ "egui-snarl",
  "egui_extras",
  "egui_material_icons",
  "env_logger",

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use eframe::egui::{self, Color32, Context, RichText};
+use eframe::egui::{self, Color32, Context, RichText, TextStyle};
 
 pub const COLOR_DISABLED: Color32 = Color32::from_rgb(189, 189, 189);
 
@@ -54,13 +54,13 @@ pub fn set_font(context: &Context) {
 }
 
 pub fn label_text(text: impl AsRef<str>) -> RichText {
-    RichText::new(text.as_ref()).size(18.0)
+    RichText::new(text.as_ref()).text_style(TextStyle::Button)
 }
 
 pub fn heading_text(text: impl AsRef<str>) -> RichText {
-    RichText::new(text.as_ref()).heading().size(30.0).strong()
+    RichText::new(text.as_ref()).heading().text_style(TextStyle::Heading)
 }
 
 pub fn body_text(text: impl AsRef<str>) -> RichText {
-    RichText::new(text.as_ref())
+    RichText::new(text.as_ref()).text_style(TextStyle::Body)
 }

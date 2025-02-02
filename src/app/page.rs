@@ -15,6 +15,7 @@ pub struct NavigationController {
 }
 
 impl NavigationController {
+    #[allow(clippy::unnecessary_box_returns)]
     pub fn new(init_page: Box<dyn Page>) -> Box<Self> {
         let mut nav_controller = Box::new(Self {
             pages: vec![init_page],

@@ -18,7 +18,7 @@ impl Page for HomePage {
                 if ui.button(label_text("Mind")).clicked() {
                     let page = MindPage::default();
                     nav_controller.push(Box::new(page));
-                };
+                }
                 ui.button(label_text("Settings")).clicked();
                 if ui.button(label_text("About")).clicked() {}
             });
