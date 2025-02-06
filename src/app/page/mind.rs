@@ -1,5 +1,5 @@
 use eframe::egui::{
-    Align, Color32, Frame, Layout, Margin, Pos2, Rounding, Shadow, Stroke, TextEdit, Ui, pos2, vec2,
+    Color32, Frame, Margin, Pos2, Rounding, Shadow, Stroke, TextEdit, Ui, pos2, vec2,
 };
 use egui_snarl::{
     InPin, InPinId, NodeId, OutPin, Snarl,
@@ -7,7 +7,10 @@ use egui_snarl::{
 };
 
 use super::{NavigationController, Page};
-use crate::{app::font::label_text, colors};
+use crate::{
+    app::font::{body_text, label_text},
+    colors,
+};
 
 pub struct MindPage {
     snarl: Snarl<NodeOfThought>,
@@ -36,8 +39,8 @@ fn snarl_style(dark_mode: bool) -> SnarlStyle {
     };
 
     SnarlStyle {
-        node_layout: Some(NodeLayout::FlippedSandwich),
-        pin_placement: Some(PinPlacement::Edge),
+        node_layout: Some(NodeLayout::Basic),
+        pin_placement: Some(PinPlacement::Outside { margin: 1.0 }),
         pin_size: Some(7.0),
         node_frame: Some(Frame {
             inner_margin: Margin::same(8.0),
@@ -109,19 +112,34 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
         pin_style(ui.style().visuals.dark_mode)
     }
 
-    fn outputs(&mut self, _node: &NodeOfThought) -> usize {
-        1
+    fn outputs(&mut self, node: &NodeOfThought) -> usize {
+        usize::from(!node.concept.trim().is_empty())
     }
 
     fn show_output(
         &mut self,
-        pin: &egui_snarl::OutPin,
+        _pin: &OutPin,
+        ui: &mut Ui,
+        _scale: f32,
+        _snarl: &mut Snarl<NodeOfThought>,
+    ) -> PinInfo {
+        pin_style(ui.style().visuals.dark_mode)
+    }
+
+    fn has_body(&mut self, _node: &NodeOfThought) -> bool {
+        true
+    }
+
+    fn show_body(
+        &mut self,
+        node: NodeId,
+        _inputs: &[InPin],
+        _outputs: &[OutPin],
         ui: &mut Ui,
         scale: f32,
         snarl: &mut Snarl<NodeOfThought>,
-    ) -> PinInfo {
-        snarl[pin.id.node].ui(ui, scale);
-        pin_style(ui.style().visuals.dark_mode)
+    ) {
+        snarl[node].ui(ui, scale);
     }
 
     fn has_node_menu(&mut self, _node: &NodeOfThought) -> bool {
@@ -130,15 +148,23 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
 
     fn show_node_menu(
         &mut self,
-        _node: egui_snarl::NodeId,
-        _inputs: &[egui_snarl::InPin],
-        _outputs: &[egui_snarl::OutPin],
+        node: NodeId,
+        inputs: &[InPin],
+        _outputs: &[OutPin],
         ui: &mut Ui,
         _scale: f32,
-        _snarl: &mut Snarl<NodeOfThought>,
+        snarl: &mut Snarl<NodeOfThought>,
     ) {
+        ui.label(body_text("Node Menu"));
+        ui.separator();
+
         if ui.button("Divergence").clicked() {
             // TODO: Implement auto-divergence
+            ui.close_menu();
+        }
+
+        if !snarl[node].is_root && ui.button("Remove this node").clicked() {
+            self.disconnect(&snarl.out_pin(inputs[0].remotes[0]), &inputs[0], snarl);
             ui.close_menu();
         }
     }
@@ -168,6 +194,7 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
             }
             AnyPins::Out(src_pin) => {
                 ui.label("Add node");
+                ui.separator();
                 if ui.button("Divergence(Manually)").clicked() {
                     let node = snarl.insert_node(pos, NodeOfThought::new(false));
                     let id = InPinId { node, input: 0 };
@@ -223,7 +250,7 @@ impl NodeOfThought {
 
     fn ui(&mut self, ui: &mut Ui, scale: f32) {
         Frame::none().outer_margin(5.0 * scale).show(ui, |ui| {
-            ui.with_layout(Layout::top_down(Align::Max), |ui| {
+            ui.vertical(|ui| {
                 ui.label(label_text("Concept"));
                 TextEdit::multiline(&mut self.concept)
                     .background_color(colors::editor(ui.style().visuals.dark_mode))
