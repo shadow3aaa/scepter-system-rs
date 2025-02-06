@@ -58,7 +58,9 @@ pub fn label_text(text: impl AsRef<str>) -> RichText {
 }
 
 pub fn heading_text(text: impl AsRef<str>) -> RichText {
-    RichText::new(text.as_ref()).heading().text_style(TextStyle::Heading)
+    RichText::new(text.as_ref())
+        .heading()
+        .text_style(TextStyle::Heading)
 }
 
 pub fn body_text(text: impl AsRef<str>) -> RichText {

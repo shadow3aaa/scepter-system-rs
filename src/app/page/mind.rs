@@ -1,11 +1,13 @@
-use eframe::egui::{Align, Color32, Layout, Pos2, TextEdit, Ui, pos2};
+use eframe::egui::{
+    Align, Color32, Frame, Layout, Margin, Pos2, Rounding, Shadow, Stroke, TextEdit, Ui, pos2, vec2,
+};
 use egui_snarl::{
     InPin, InPinId, NodeId, OutPin, Snarl,
-    ui::{AnyPins, PinInfo, SnarlStyle, SnarlViewer, WireStyle},
+    ui::{AnyPins, NodeLayout, PinInfo, PinPlacement, SnarlStyle, SnarlViewer, WireStyle},
 };
 
 use super::{NavigationController, Page};
-use crate::app::font::label_text;
+use crate::{app::font::label_text, colors};
 
 pub struct MindPage {
     snarl: Snarl<NodeOfThought>,
@@ -23,10 +25,52 @@ impl Default for MindPage {
     }
 }
 
+fn snarl_style(dark_mode: bool) -> SnarlStyle {
+    let fill = colors::conatiner_background(dark_mode);
+
+    let shadow = Shadow {
+        offset: vec2(10.0, 20.0),
+        blur: 15.0,
+        spread: 0.0,
+        color: Color32::from_black_alpha(25),
+    };
+
+    SnarlStyle {
+        node_layout: Some(NodeLayout::FlippedSandwich),
+        pin_placement: Some(PinPlacement::Edge),
+        pin_size: Some(7.0),
+        node_frame: Some(Frame {
+            inner_margin: Margin::same(8.0),
+            outer_margin: Margin {
+                left: 0.0,
+                right: 0.0,
+                top: 0.0,
+                bottom: 4.0,
+            },
+            rounding: Rounding::same(8.0),
+            fill,
+            stroke: Stroke::NONE,
+            shadow,
+        }),
+        bg_frame: Some(Frame {
+            inner_margin: Margin::same(2.0),
+            outer_margin: Margin::ZERO,
+            rounding: Rounding::ZERO,
+            stroke: Stroke::NONE,
+            ..Default::default()
+        }),
+        ..SnarlStyle::new()
+    }
+}
+
 impl Page for MindPage {
     fn ui(&mut self, ui: &mut Ui, _nav_controller: &mut NavigationController) {
-        self.snarl
-            .show(&mut self.viewer, &SnarlStyle::default(), "MinePage", ui);
+        self.snarl.show(
+            &mut self.viewer,
+            &snarl_style(ui.style().visuals.dark_mode),
+            "MinePage",
+            ui,
+        );
     }
 }
 
@@ -73,29 +117,11 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
         &mut self,
         pin: &egui_snarl::OutPin,
         ui: &mut Ui,
-        _scale: f32,
+        scale: f32,
         snarl: &mut Snarl<NodeOfThought>,
     ) -> PinInfo {
-        ui.with_layout(Layout::top_down(Align::Max), |ui| {
-            snarl[pin.id.node].ui(ui);
-        });
+        snarl[pin.id.node].ui(ui, scale);
         pin_style(ui.style().visuals.dark_mode)
-    }
-
-    fn has_graph_menu(&mut self, _pos: Pos2, _snarl: &mut Snarl<NodeOfThought>) -> bool {
-        true
-    }
-
-    fn show_graph_menu(
-        &mut self,
-        pos: Pos2,
-        ui: &mut Ui,
-        _scale: f32,
-        snarl: &mut Snarl<NodeOfThought>,
-    ) {
-        if ui.button("Add Node").clicked() {
-            snarl.insert_node(pos, NodeOfThought::new(false));
-        }
     }
 
     fn has_node_menu(&mut self, _node: &NodeOfThought) -> bool {
@@ -112,17 +138,20 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
         _snarl: &mut Snarl<NodeOfThought>,
     ) {
         if ui.button("Divergence").clicked() {
-            // TODO: Implement divergence
+            // TODO: Implement auto-divergence
             ui.close_menu();
         }
     }
 
     fn has_dropped_wire_menu(
         &mut self,
-        _src_pins: AnyPins,
-        _snarl: &mut Snarl<NodeOfThought>,
+        src_pins: AnyPins,
+        snarl: &mut Snarl<NodeOfThought>,
     ) -> bool {
-        true
+        match src_pins {
+            AnyPins::Out(out_pin_ids) => !snarl[out_pin_ids[0].node].concept.trim().is_empty(),
+            AnyPins::In(_) => false,
+        }
     }
 
     fn show_dropped_wire_menu(
@@ -160,19 +189,11 @@ fn remove_nodes(snarl: &mut Snarl<NodeOfThought>, nodeid: NodeId) {
 }
 
 fn pin_style(dark_mode: bool) -> PinInfo {
-    if dark_mode {
-        PinInfo::circle()
-            .with_wire_style(WireStyle::AxisAligned {
-                corner_radius: 25.0,
-            })
-            .with_fill(Color32::GOLD)
-    } else {
-        PinInfo::circle()
-            .with_wire_style(WireStyle::AxisAligned {
-                corner_radius: 25.0,
-            })
-            .with_fill(Color32::GRAY)
-    }
+    PinInfo::circle()
+        .with_wire_style(WireStyle::AxisAligned {
+            corner_radius: 25.0,
+        })
+        .with_fill(colors::pin(dark_mode))
 }
 
 struct NodeOfThought {
@@ -200,20 +221,26 @@ impl NodeOfThought {
         self.childs.retain(|&n| n != node);
     }
 
-    fn ui(&mut self, ui: &mut Ui) {
-        ui.label(label_text("Concept"));
-        TextEdit::multiline(&mut self.concept)
-            .margin(ui.spacing().item_spacing)
-            .show(ui);
+    fn ui(&mut self, ui: &mut Ui, scale: f32) {
+        Frame::none().outer_margin(5.0 * scale).show(ui, |ui| {
+            ui.with_layout(Layout::top_down(Align::Max), |ui| {
+                ui.label(label_text("Concept"));
+                TextEdit::multiline(&mut self.concept)
+                    .background_color(colors::editor(ui.style().visuals.dark_mode))
+                    .margin(ui.spacing().item_spacing)
+                    .show(ui);
 
-        ui.add_space(5.0);
-        if !self.concept.trim().is_empty() {
-            ui.label(label_text("Clarification"));
-            ui.add_space(5.0);
+                ui.add_space(5.0);
+                if !self.concept.trim().is_empty() {
+                    ui.label(label_text("Clarification"));
+                    ui.add_space(5.0);
 
-            TextEdit::multiline(&mut self.clarification)
-                .margin(ui.spacing().item_spacing)
-                .show(ui);
-        }
+                    TextEdit::multiline(&mut self.clarification)
+                        .background_color(colors::editor(ui.style().visuals.dark_mode))
+                        .margin(ui.spacing().item_spacing)
+                        .show(ui);
+                }
+            });
+        });
     }
 }
