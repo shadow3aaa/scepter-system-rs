@@ -71,6 +71,7 @@ impl eframe::App for App {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            ui.style_mut().debug.show_unaligned = false;
             self.show_page(ui);
         });
     }
