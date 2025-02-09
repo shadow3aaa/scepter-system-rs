@@ -2,13 +2,13 @@ mod font;
 mod page;
 
 use eframe::{
-    CreationContext,
     egui::{self, Theme, Ui},
+    CreationContext,
 };
 
 use egui_material_icons::icons::{ICON_ARROW_BACK, ICON_DARK_MODE, ICON_HOME, ICON_LIGHT_MODE};
-use font::{COLOR_DISABLED, label_text, set_font};
-use page::{NavigationController, home::HomePage};
+use font::{label_text, set_font, COLOR_DISABLED};
+use page::{home::HomePage, NavigationController};
 
 pub struct App {
     nav_controller: Box<NavigationController>,

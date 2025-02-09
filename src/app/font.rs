@@ -48,8 +48,7 @@ pub fn set_font(context: &Context) {
         .or_default()
         .push("MapleMonoCN-Regular".to_owned());
 
-    egui_material_icons::add_to_fonts(&mut fonts);
-
+    context.add_font(egui_material_icons::font_insert());
     context.set_fonts(fonts);
 }
 

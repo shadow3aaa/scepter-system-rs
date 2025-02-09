@@ -1,9 +1,9 @@
 use eframe::egui::{
-    Color32, Frame, Margin, Pos2, Rounding, Shadow, Stroke, TextEdit, Ui, pos2, vec2,
+    pos2, Color32, CornerRadius, Frame, Margin, Pos2, Shadow, Stroke, TextEdit, Ui,
 };
 use egui_snarl::{
-    InPin, InPinId, NodeId, OutPin, Snarl,
     ui::{AnyPins, NodeLayout, PinInfo, PinPlacement, SnarlStyle, SnarlViewer, WireStyle},
+    InPin, InPinId, NodeId, OutPin, Snarl,
 };
 
 use super::{NavigationController, Page};
@@ -32,9 +32,9 @@ fn snarl_style(dark_mode: bool) -> SnarlStyle {
     let fill = colors::conatiner_background(dark_mode);
 
     let shadow = Shadow {
-        offset: vec2(10.0, 20.0),
-        blur: 15.0,
-        spread: 0.0,
+        offset: [10, 20],
+        blur: 15,
+        spread: 0,
         color: Color32::from_black_alpha(25),
     };
 
@@ -43,22 +43,22 @@ fn snarl_style(dark_mode: bool) -> SnarlStyle {
         pin_placement: Some(PinPlacement::Outside { margin: 1.0 }),
         pin_size: Some(7.0),
         node_frame: Some(Frame {
-            inner_margin: Margin::same(8.0),
+            inner_margin: Margin::same(8),
             outer_margin: Margin {
-                left: 0.0,
-                right: 0.0,
-                top: 0.0,
-                bottom: 4.0,
+                left: 0,
+                right: 0,
+                top: 0,
+                bottom: 4,
             },
-            rounding: Rounding::same(8.0),
+            corner_radius: CornerRadius::same(8),
             fill,
             stroke: Stroke::NONE,
             shadow,
         }),
         bg_frame: Some(Frame {
-            inner_margin: Margin::same(2.0),
+            inner_margin: Margin::same(2),
             outer_margin: Margin::ZERO,
-            rounding: Rounding::ZERO,
+            corner_radius: CornerRadius::ZERO,
             stroke: Stroke::NONE,
             ..Default::default()
         }),
@@ -249,7 +249,7 @@ impl NodeOfThought {
     }
 
     fn ui(&mut self, ui: &mut Ui, scale: f32) {
-        Frame::none().outer_margin(5.0 * scale).show(ui, |ui| {
+        Frame::NONE.outer_margin(5.0 * scale).show(ui, |ui| {
             ui.vertical(|ui| {
                 ui.label(label_text("Concept"));
                 TextEdit::multiline(&mut self.concept)

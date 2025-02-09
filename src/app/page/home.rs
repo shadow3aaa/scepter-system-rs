@@ -2,7 +2,7 @@ use eframe::egui::{Frame, Ui};
 
 use crate::app::font::{heading_text, label_text};
 
-use super::{NavigationController, Page, mind::MindPage};
+use super::{mind::MindPage, NavigationController, Page};
 
 #[derive(Default)]
 pub struct HomePage;
@@ -13,7 +13,7 @@ impl Page for HomePage {
             ui.add_space(50.0);
             ui.heading(heading_text("The Scepter System"));
             ui.add_space(50.0);
-            Frame::none().outer_margin(5.0).show(ui, |ui| {
+            Frame::NONE.outer_margin(5).show(ui, |ui| {
                 ui.style_mut().visuals.button_frame = false;
                 if ui.button(label_text("Mind")).clicked() {
                     let page = MindPage::default();
