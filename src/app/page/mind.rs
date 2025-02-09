@@ -8,13 +8,17 @@ use egui_snarl::{
 
 use super::{NavigationController, Page};
 use crate::{
-    app::font::{body_text, label_text},
+    app::{
+        font::{body_text, label_text},
+        ollama_wrapper::OllamaWrapper,
+    },
     colors,
 };
 
 pub struct MindPage {
     snarl: Snarl<NodeOfThought>,
     viewer: MindViewer,
+    ollama: OllamaWrapper,
 }
 
 impl Default for MindPage {
@@ -24,6 +28,7 @@ impl Default for MindPage {
         Self {
             snarl,
             viewer: MindViewer,
+            ollama: OllamaWrapper::new(),
         }
     }
 }
@@ -67,7 +72,33 @@ fn snarl_style(dark_mode: bool) -> SnarlStyle {
 }
 
 impl Page for MindPage {
-    fn ui(&mut self, ui: &mut Ui, _nav_controller: &mut NavigationController) {
+    fn top_panel_ui(&mut self, ui: &mut Ui, nav_controller: &mut NavigationController) {
+        ui.menu_button(
+            label_text(
+                self.ollama
+                    .current_model
+                    .as_ref()
+                    .map(|s| s.as_str())
+                    .unwrap_or("Choose a model before you start"),
+            ),
+            |ui| {
+                ui.set_width(200.0);
+                if let Some(model) = &self.ollama.current_model {
+                    if ui.button("set as default").clicked() {
+                        // TODO: set current model as default
+                    }
+                }
+
+                for model in &self.ollama.model_list {
+                    if ui.button(model).clicked() {
+                        self.ollama.current_model = Some(model.clone());
+                    }
+                }
+            },
+        );
+    }
+
+    fn main_ui(&mut self, ui: &mut Ui, _nav_controller: &mut NavigationController) {
         self.snarl.show(
             &mut self.viewer,
             &snarl_style(ui.style().visuals.dark_mode),

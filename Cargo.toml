@@ -9,4 +9,5 @@ egui-snarl = { git = "https://github.com/shadow3aaa/egui-snarl" }
 egui_extras = { version = "0.31.0", features = ["image"] }
 egui_material_icons = "0.3.0"
 env_logger = "0.11.6"
+ollama-rs = "0.2.5"
 uuid = { version = "1.13.1", features = ["v4", "fast-rng"] }

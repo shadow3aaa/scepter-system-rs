@@ -6,7 +6,11 @@ use std::ptr;
 use eframe::egui::Ui;
 
 pub trait Page {
-    fn ui(&mut self, ui: &mut Ui, nav_controller: &mut NavigationController);
+    /// Provides some top panel tools
+    #[allow(unused_variables)]
+    fn top_panel_ui(&mut self, ui: &mut Ui, nav_controller: &mut NavigationController) {}
+    /// Main of the page
+    fn main_ui(&mut self, ui: &mut Ui, nav_controller: &mut NavigationController);
 }
 
 pub struct NavigationController {
@@ -46,8 +50,17 @@ impl NavigationController {
         self.pages.len()
     }
 
-    pub fn ui(&mut self, ui: &mut Ui) {
-        let nav_ref = unsafe { &mut *self.self_ref }; // this is fucking safe if nobody fucks the memory
-        self.current_page().ui(ui, nav_ref);
+    fn safe_self_ref(&self) -> &'static mut NavigationController {
+        unsafe { &mut *self.self_ref } // this is fucking safe if nobody fucks the memory
+    }
+
+    pub fn top_panel_ui(&mut self, ui: &mut Ui) {
+        let nav_ref = self.safe_self_ref();
+        self.current_page().top_panel_ui(ui, nav_ref);
+    }
+
+    pub fn main_ui(&mut self, ui: &mut Ui) {
+        let nav_ref = self.safe_self_ref(); // this is fucking safe if nobody fucks the memory
+        self.current_page().main_ui(ui, nav_ref);
     }
 }

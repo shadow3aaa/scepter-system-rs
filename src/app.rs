@@ -1,5 +1,6 @@
 mod font;
 mod page;
+mod ollama_wrapper;
 
 use eframe::{
     egui::{self, Theme, Ui},
@@ -23,7 +24,7 @@ impl App {
     }
 
     fn show_page(&mut self, ui: &mut Ui) {
-        self.nav_controller.ui(ui);
+        self.nav_controller.main_ui(ui);
     }
 }
 
@@ -67,6 +68,8 @@ impl eframe::App for App {
                         Theme::Dark
                     });
                 }
+
+                self.nav_controller.top_panel_ui(ui);
             });
         });
 
