@@ -39,7 +39,7 @@ fn snarl_style(dark_mode: bool) -> SnarlStyle {
     };
 
     SnarlStyle {
-        node_layout: Some(NodeLayout::Basic),
+        node_layout: Some(NodeLayout::Sandwich),
         pin_placement: Some(PinPlacement::Outside { margin: 1.0 }),
         pin_size: Some(7.0),
         node_frame: Some(Frame {
