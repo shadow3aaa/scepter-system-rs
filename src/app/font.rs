@@ -56,9 +56,16 @@ pub fn label_text(text: impl AsRef<str>) -> RichText {
     RichText::new(text.as_ref()).text_style(TextStyle::Button)
 }
 
+pub fn super_label_text(text: impl AsRef<str>) -> RichText {
+    RichText::new(text.as_ref())
+        .text_style(TextStyle::Button)
+        .size(18.0)
+}
+
 pub fn heading_text(text: impl AsRef<str>) -> RichText {
     RichText::new(text.as_ref())
         .heading()
+        .strong()
         .text_style(TextStyle::Heading)
 }
 

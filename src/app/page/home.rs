@@ -1,6 +1,6 @@
 use eframe::egui::{Frame, Ui};
 
-use crate::app::font::{heading_text, label_text};
+use crate::app::font::{heading_text, super_label_text};
 
 use super::{mind::MindPage, NavigationController, Page};
 
@@ -15,12 +15,12 @@ impl Page for HomePage {
             ui.add_space(50.0);
             Frame::NONE.outer_margin(5).show(ui, |ui| {
                 ui.style_mut().visuals.button_frame = false;
-                if ui.button(label_text("Mind")).clicked() {
+                if ui.button(super_label_text("Mind")).clicked() {
                     let page = MindPage::default();
                     nav_controller.push(Box::new(page));
                 }
-                ui.button(label_text("Settings")).clicked();
-                if ui.button(label_text("About")).clicked() {}
+                ui.button(super_label_text("Settings")).clicked();
+                if ui.button(super_label_text("About")).clicked() {}
             });
         });
     }
