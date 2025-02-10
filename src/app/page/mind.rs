@@ -82,16 +82,18 @@ impl Page for MindPage {
                     .unwrap_or("Choose a model before you start"),
             ),
             |ui| {
-                ui.set_width(200.0);
+                ui.set_min_width(200.0);
                 if let Some(model) = &self.ollama.current_model {
                     if ui.button("set as default").clicked() {
                         // TODO: set current model as default
+                        ui.close_menu();
                     }
                 }
 
                 for model in &self.ollama.model_list {
                     if ui.button(model).clicked() {
                         self.ollama.current_model = Some(model.clone());
+                        ui.close_menu();
                     }
                 }
             },
