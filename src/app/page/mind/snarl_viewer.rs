@@ -1,10 +1,12 @@
 use eframe::egui::{Pos2, Ui};
-use egui_snarl::{ui::{AnyPins, PinInfo, SnarlViewer, WireStyle}, InPin, InPinId, NodeId, OutPin, Snarl};
+use egui_snarl::{
+    ui::{AnyPins, PinInfo, SnarlViewer, WireStyle},
+    InPin, InPinId, NodeId, OutPin, Snarl,
+};
 
 use crate::{app::font::body_text, colors};
 
 use super::node::{remove_nodes, NodeOfThought};
-
 
 pub struct MindViewer;
 
@@ -134,204 +136,21 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
             }
         }
     }
-    
-    fn node_frame(
-        &mut self,
-        default: eframe::egui::Frame,
-        node: egui_snarl::NodeId,
-        inputs: &[InPin],
-        outputs: &[OutPin],
-        snarl: &Snarl<NodeOfThought>,
-    ) -> eframe::egui::Frame {
-        let _ = (node, inputs, outputs, snarl);
-        default
+
+    fn has_graph_menu(&mut self, _pos: Pos2, _snarl: &mut Snarl<NodeOfThought>) -> bool {
+        true
     }
-    
-    fn header_frame(
+
+    fn show_graph_menu(
         &mut self,
-        default: eframe::egui::Frame,
-        node: egui_snarl::NodeId,
-        inputs: &[InPin],
-        outputs: &[OutPin],
-        snarl: &Snarl<NodeOfThought>,
-    ) -> eframe::egui::Frame {
-        let _ = (node, inputs, outputs, snarl);
-        default
-    }
-    
-    fn has_node_style(
-        &mut self,
-        node: egui_snarl::NodeId,
-        inputs: &[InPin],
-        outputs: &[OutPin],
-        snarl: &Snarl<NodeOfThought>,
-    ) -> bool {
-        let _ = (node, inputs, outputs, snarl);
-        false
-    }
-    
-    fn apply_node_style(
-        &mut self,
-        style: &mut eframe::egui::Style,
-        node: egui_snarl::NodeId,
-        inputs: &[InPin],
-        outputs: &[OutPin],
-        snarl: &Snarl<NodeOfThought>,
-    ) {
-        let _ = (style, node, inputs, outputs, snarl);
-    }
-    
-    fn node_layout(
-        &mut self,
-        default: egui_snarl::ui::NodeLayout,
-        node: egui_snarl::NodeId,
-        inputs: &[InPin],
-        outputs: &[OutPin],
-        snarl: &Snarl<NodeOfThought>,
-    ) -> egui_snarl::ui::NodeLayout {
-        let _ = (node, inputs, outputs, snarl);
-        default
-    }
-    
-    fn show_header(
-        &mut self,
-        node: egui_snarl::NodeId,
-        inputs: &[InPin],
-        outputs: &[OutPin],
+        _pos: Pos2,
         ui: &mut Ui,
-        scale: f32,
+        _scale: f32,
         snarl: &mut Snarl<NodeOfThought>,
     ) {
-        let _ = (inputs, outputs, scale);
-        ui.label(self.title(&snarl[node]));
-    }
-    
-    fn has_footer(&mut self, node: &NodeOfThought) -> bool {
-        let _ = node;
-        false
-    }
-    
-    fn show_footer(
-        &mut self,
-        node: egui_snarl::NodeId,
-        inputs: &[InPin],
-        outputs: &[OutPin],
-        ui: &mut Ui,
-        scale: f32,
-        snarl: &mut Snarl<NodeOfThought>,
-    ) {
-        let _ = (node, inputs, outputs, ui, scale, snarl);
-    }
-    
-    fn final_node_rect(
-        &mut self,
-        node: egui_snarl::NodeId,
-        ui_rect: eframe::egui::Rect,
-        graph_rect: eframe::egui::Rect,
-        ui: &mut Ui,
-        scale: f32,
-        snarl: &mut Snarl<NodeOfThought>,
-    ) {
-        let _ = (node, ui_rect, graph_rect, ui, scale, snarl);
-    }
-    
-    fn has_on_hover_popup(&mut self, node: &NodeOfThought) -> bool {
-        let _ = node;
-        false
-    }
-    
-    fn show_on_hover_popup(
-        &mut self,
-        node: egui_snarl::NodeId,
-        inputs: &[InPin],
-        outputs: &[OutPin],
-        ui: &mut Ui,
-        scale: f32,
-        snarl: &mut Snarl<NodeOfThought>,
-    ) {
-        let _ = (node, inputs, outputs, ui, scale, snarl);
-    }
-    
-    fn has_wire_widget(&mut self, from: &egui_snarl::OutPinId, to: &egui_snarl::InPinId, snarl: &Snarl<NodeOfThought>) -> bool {
-        let _ = (from, to, snarl);
-        false
-    }
-    
-    fn show_wire_widget(
-        &mut self,
-        from: &OutPin,
-        to: &InPin,
-        ui: &mut Ui,
-        scale: f32,
-        snarl: &mut Snarl<NodeOfThought>,
-    ) {
-        let _ = (from, to, ui, scale, snarl);
-    }
-    
-    fn has_graph_menu(&mut self, pos: eframe::egui::Pos2, snarl: &mut Snarl<NodeOfThought>) -> bool {
-        let _ = (pos, snarl);
-        false
-    }
-    
-    fn show_graph_menu(&mut self, pos: eframe::egui::Pos2, ui: &mut Ui, scale: f32, snarl: &mut Snarl<NodeOfThought>) {
-        let _ = (pos, ui, scale, snarl);
-    }
-    
-    fn drop_outputs(&mut self, pin: &OutPin, snarl: &mut Snarl<NodeOfThought>) {
-        snarl.drop_outputs(pin.id);
-    }
-    
-    fn drop_inputs(&mut self, pin: &InPin, snarl: &mut Snarl<NodeOfThought>) {
-        snarl.drop_inputs(pin.id);
-    }
-    
-    fn draw_input_pin(
-        &mut self,
-        pin: &InPin,
-        pin_info: &PinInfo,
-        pos: eframe::egui::Pos2,
-        size: f32,
-        snarl_style: &egui_snarl::ui::SnarlStyle,
-        style: &eframe::egui::Style,
-        painter: &eframe::egui::Painter,
-        scale: f32,
-        snarl: &Snarl<NodeOfThought>,
-    ) -> eframe::egui::Color32 {
-        let _ = (pin, snarl);
-    
-        pin_info.draw(pos, size, snarl_style, style, painter, scale)
-    }
-    
-    fn draw_output_pin(
-        &mut self,
-        pin: &OutPin,
-        pin_info: &PinInfo,
-        pos: eframe::egui::Pos2,
-        size: f32,
-        snarl_style: &egui_snarl::ui::SnarlStyle,
-        style: &eframe::egui::Style,
-        painter: &eframe::egui::Painter,
-        scale: f32,
-        snarl: &Snarl<NodeOfThought>,
-    ) -> eframe::egui::Color32 {
-        let _ = (pin, snarl);
-    
-        pin_info.draw(pos, size, snarl_style, style, painter, scale)
-    }
-    
-    fn draw_background(
-        &mut self,
-        background: Option<&egui_snarl::ui::BackgroundPattern>,
-        viewport: &egui_snarl::ui::Viewport,
-        snarl_style: &egui_snarl::ui::SnarlStyle,
-        style: &eframe::egui::Style,
-        painter: &eframe::egui::Painter,
-        snarl: &Snarl<NodeOfThought>,
-    ) {
-        let _ = snarl;
-    
-        if let Some(background) = background {
-            background.draw(viewport, snarl_style, style, painter);
+        if ui.button("Reset").clicked() {
+            *snarl = snarl_default();
+            ui.close_menu();
         }
     }
 }
@@ -342,4 +161,10 @@ fn pin_style(dark_mode: bool) -> PinInfo {
             corner_radius: 25.0,
         })
         .with_fill(colors::pin(dark_mode))
+}
+
+pub fn snarl_default() -> Snarl<NodeOfThought> {
+    let mut snarl = Snarl::new();
+    snarl.insert_node(Pos2::new(0.0, 0.0), NodeOfThought::new(true));
+    snarl
 }

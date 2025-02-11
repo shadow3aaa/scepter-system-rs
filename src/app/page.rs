@@ -1,7 +1,6 @@
 pub mod home;
 pub mod mind;
 
-
 use eframe::{egui::Ui, Frame, Storage};
 
 use super::navigation_controller::NavigationController;
@@ -21,10 +20,20 @@ pub trait Page {
     }
 
     /// Provides some top panel tools
-    fn top_panel_ui(&mut self, ui: &mut Ui, frame: &mut Frame, nav_controller: &mut NavigationController) {
+    fn top_panel_ui(
+        &mut self,
+        ui: &mut Ui,
+        frame: &mut Frame,
+        nav_controller: &mut NavigationController,
+    ) {
         let _ = (ui, frame, nav_controller);
     }
-    
+
     /// Main of the page
-    fn main_ui(&mut self, ui: &mut Ui, frame: &mut Frame, nav_controller: &mut NavigationController);
+    fn main_ui(
+        &mut self,
+        ui: &mut Ui,
+        frame: &mut Frame,
+        nav_controller: &mut NavigationController,
+    );
 }

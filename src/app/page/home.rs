@@ -8,7 +8,12 @@ use super::{mind::MindPage, NavigationController, Page};
 pub struct HomePage;
 
 impl Page for HomePage {
-    fn main_ui(&mut self, ui: &mut Ui, frame: &mut eframe::Frame, nav_controller: &mut NavigationController) {
+    fn main_ui(
+        &mut self,
+        ui: &mut Ui,
+        frame: &mut eframe::Frame,
+        nav_controller: &mut NavigationController,
+    ) {
         ui.vertical_centered(|ui| {
             ui.add_space(50.0);
             ui.heading(heading_text("The Scepter System"));

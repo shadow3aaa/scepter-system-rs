@@ -21,9 +21,7 @@ impl App {
     pub fn setup(context: &CreationContext<'_>) -> Self {
         set_font(&context.egui_ctx);
         Self {
-            nav_controller: NavigationController::new(
-                Box::new(HomePage)
-            ),
+            nav_controller: NavigationController::new(Box::new(HomePage)),
         }
     }
 }
@@ -60,7 +58,8 @@ impl eframe::App for App {
                 };
 
                 if ui.button(home_button_label).clicked() && !is_root_page {
-                    self.nav_controller.set_current_page(Box::new(HomePage), frame.storage_mut().unwrap());
+                    self.nav_controller
+                        .set_current_page(Box::new(HomePage), frame.storage_mut().unwrap());
                 }
 
                 if ui.button(back_button_label).clicked() && !is_root_page {

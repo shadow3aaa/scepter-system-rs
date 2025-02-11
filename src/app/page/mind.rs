@@ -1,24 +1,23 @@
 mod node;
 mod snarl_viewer;
 
-use eframe::{egui::{
-    pos2, Color32, CornerRadius, Frame, Margin, Shadow, Stroke, Ui,
-}, get_value, set_value, Storage};
+use eframe::{
+    egui::{Color32, CornerRadius, Frame, Margin, Shadow, Stroke, Ui},
+    get_value, set_value, Storage,
+};
 use egui_snarl::{
-    ui::{NodeLayout, PinPlacement, SnarlStyle}, Snarl,
+    ui::{NodeLayout, PinPlacement, SnarlStyle},
+    Snarl,
 };
 
+use super::{NavigationController, Page};
 use crate::{
-    app::{
-        font::label_text,
-        ollama_wrapper::OllamaWrapper,
-    },
+    app::{font::label_text, ollama_wrapper::OllamaWrapper},
     colors,
 };
-use super::{NavigationController, Page};
 
 use node::NodeOfThought;
-use snarl_viewer::MindViewer;
+use snarl_viewer::{snarl_default, MindViewer};
 
 pub struct MindPage {
     snarl: Snarl<NodeOfThought>,
@@ -28,12 +27,9 @@ pub struct MindPage {
 
 impl MindPage {
     pub fn new(storage: &dyn Storage) -> Self {
-        let snarl: Snarl<NodeOfThought> = get_value(storage, "MindPage:snarl").unwrap_or_else(|| {
-            let mut snarl = Snarl::new();
-            snarl.insert_node(pos2(0.0, 0.0), NodeOfThought::new(true));
-            snarl
-        });
-        
+        let snarl: Snarl<NodeOfThought> =
+            get_value(storage, "MindPage:snarl").unwrap_or_else(snarl_default);
+
         Self {
             snarl,
             viewer: MindViewer,
@@ -47,11 +43,17 @@ impl Page for MindPage {
         set_value(storage, "MindPage:snarl", &self.snarl);
     }
 
-    fn top_panel_ui(&mut self, ui: &mut Ui, _frame: &mut eframe::Frame, _nav_controller: &mut NavigationController) {
+    fn top_panel_ui(
+        &mut self,
+        ui: &mut Ui,
+        _frame: &mut eframe::Frame,
+        _nav_controller: &mut NavigationController,
+    ) {
         ui.menu_button(
             label_text(
                 self.ollama
-                    .current_model.as_deref()
+                    .current_model
+                    .as_deref()
                     .unwrap_or("Choose a model before you start"),
             ),
             |ui| {
@@ -73,7 +75,12 @@ impl Page for MindPage {
         );
     }
 
-    fn main_ui(&mut self, ui: &mut Ui, _frame: &mut eframe::Frame, _nav_controller: &mut NavigationController) {
+    fn main_ui(
+        &mut self,
+        ui: &mut Ui,
+        _frame: &mut eframe::Frame,
+        _nav_controller: &mut NavigationController,
+    ) {
         self.snarl.show(
             &mut self.viewer,
             &snarl_style(ui.style().visuals.dark_mode),
@@ -82,7 +89,6 @@ impl Page for MindPage {
         );
     }
 }
-
 
 fn snarl_style(dark_mode: bool) -> SnarlStyle {
     let fill = colors::conatiner_background(dark_mode);
