@@ -4,10 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-eframe = "0.31.0"
-egui-snarl = { git = "https://github.com/shadow3aaa/egui-snarl" }
+drama_llama = { version = "0.5.2", features = ["cuda", "cuda_f16", "egui"] }
+eframe = { version = "0.31.0", features = ["persistence", "ron"] }
+egui-snarl = { git = "https://github.com/shadow3aaa/egui-snarl", features = ["serde"]}
 egui_extras = { version = "0.31.0", features = ["image"] }
 egui_material_icons = "0.3.0"
 env_logger = "0.11.6"
-ollama-rs = "0.2.5"
+ron = "0.8.1"
+serde = { version = "1.0.217", features = ["derive"] }
 uuid = { version = "1.13.1", features = ["v4", "fast-rng"] }

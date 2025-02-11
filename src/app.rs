@@ -1,15 +1,17 @@
 mod font;
-mod page;
+mod navigation_controller;
 mod ollama_wrapper;
+mod page;
 
 use eframe::{
-    egui::{self, Theme, Ui},
-    CreationContext,
+    egui::{self, Theme},
+    CreationContext, Storage,
 };
-
 use egui_material_icons::icons::{ICON_ARROW_BACK, ICON_DARK_MODE, ICON_HOME, ICON_LIGHT_MODE};
+
 use font::{label_text, set_font, COLOR_DISABLED};
-use page::{home::HomePage, NavigationController};
+use navigation_controller::NavigationController;
+use page::home::HomePage;
 
 pub struct App {
     nav_controller: Box<NavigationController>,
@@ -19,17 +21,21 @@ impl App {
     pub fn setup(context: &CreationContext<'_>) -> Self {
         set_font(&context.egui_ctx);
         Self {
-            nav_controller: NavigationController::new(Box::new(HomePage)),
+            nav_controller: NavigationController::new(
+                Box::new(HomePage)
+            ),
         }
-    }
-
-    fn show_page(&mut self, ui: &mut Ui) {
-        self.nav_controller.main_ui(ui);
     }
 }
 
 impl eframe::App for App {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn save(&mut self, storage: &mut dyn Storage) {
+        for page in self.nav_controller.pages_mut() {
+            page.save(storage);
+        }
+    }
+
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.style_mut().visuals.button_frame = false;
@@ -54,11 +60,11 @@ impl eframe::App for App {
                 };
 
                 if ui.button(home_button_label).clicked() && !is_root_page {
-                    self.nav_controller.set_current_page(Box::new(HomePage));
+                    self.nav_controller.set_current_page(Box::new(HomePage), frame.storage_mut().unwrap());
                 }
 
                 if ui.button(back_button_label).clicked() && !is_root_page {
-                    self.nav_controller.pop();
+                    self.nav_controller.pop(frame.storage_mut().unwrap());
                 }
 
                 if ui.button(theme_button_label).clicked() {
@@ -69,13 +75,13 @@ impl eframe::App for App {
                     });
                 }
 
-                self.nav_controller.top_panel_ui(ui);
+                self.nav_controller.top_panel_ui(ui, frame);
             });
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.style_mut().debug.show_unaligned = false;
-            self.show_page(ui);
+            self.nav_controller.main_ui(ui, frame);
         });
     }
 }

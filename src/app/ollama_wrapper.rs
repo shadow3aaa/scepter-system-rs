@@ -7,9 +7,9 @@ impl OllamaWrapper {
     pub fn new() -> Self {
         Self {
             current_model: None,
-            model_list: vec!["llm-1", "llm-2", "llm-3"]
+            model_list: ["llm-1", "llm-2", "llm-3"]
                 .iter()
-                .map(|s| s.to_string())
+                .map(|s| (*s).to_string())
                 .collect(),
         }
     }
