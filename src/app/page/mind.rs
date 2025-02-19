@@ -1,46 +1,62 @@
 mod node;
 mod snarl_viewer;
 
+use std::path::Path;
+
 use eframe::{
-    egui::{Color32, CornerRadius, Frame, Margin, Shadow, Stroke, Ui},
+    egui::{
+        Color32, CornerRadius, Frame, Margin, Shadow, Stroke, Ui,
+    },
     get_value, set_value, Storage,
 };
+use egui_file_dialog::FileDialog;
 use egui_snarl::{
     ui::{NodeLayout, PinPlacement, SnarlStyle},
     Snarl,
 };
+use serde::{Deserialize, Serialize};
 
 use super::{NavigationController, Page};
 use crate::{
-    app::{font::label_text, ollama_wrapper::OllamaWrapper},
-    colors,
+    app::{
+        font::label_text,
+        llama_wrapper::{params::Params, Llama, ModelInfo},
+    },
+    colors::{self},
 };
 
 use node::NodeOfThought;
-use snarl_viewer::{snarl_default, MindViewer};
+use snarl_viewer::{custom_snarl_default, MindViewer};
 
+#[derive(Serialize, Deserialize)]
 pub struct MindPage {
     snarl: Snarl<NodeOfThought>,
+    #[serde(skip)]
+    file_dialog: FileDialog,
     viewer: MindViewer,
-    ollama: OllamaWrapper,
+    llama: Llama,
 }
 
 impl MindPage {
     pub fn new(storage: &dyn Storage) -> Self {
-        let snarl: Snarl<NodeOfThought> =
-            get_value(storage, "MindPage:snarl").unwrap_or_else(snarl_default);
+        get_value(storage, "MindPage").unwrap_or_default()
+    }
+}
 
+impl Default for MindPage {
+    fn default() -> Self {
         Self {
-            snarl,
+            snarl: custom_snarl_default(),
+            file_dialog: FileDialog::new(),
             viewer: MindViewer,
-            ollama: OllamaWrapper::new(),
+            llama: Llama::new(),
         }
     }
 }
 
 impl Page for MindPage {
     fn save(&self, storage: &mut dyn eframe::Storage) {
-        set_value(storage, "MindPage:snarl", &self.snarl);
+        set_value(storage, "MindPage", &self);
     }
 
     fn top_panel_ui(
@@ -51,28 +67,73 @@ impl Page for MindPage {
     ) {
         ui.menu_button(
             label_text(
-                self.ollama
-                    .current_model
-                    .as_deref()
-                    .unwrap_or("Choose a model before you start"),
+                self.llama
+                    .get_current_model_name()
+                    .unwrap_or_else(|| "Choose a model before you start".to_string()),
             ),
             |ui| {
-                ui.set_min_width(200.0);
-                if let Some(model) = &self.ollama.current_model {
-                    if ui.button("set as default").clicked() {
-                        // TODO: set current model as default
-                        ui.close_menu();
-                    }
+                ui.set_min_width(220.0);
+
+                if ui.button("add model from file").clicked() {
+                    self.file_dialog.pick_file();
                 }
 
-                for model in &self.ollama.model_list {
-                    if ui.button(model).clicked() {
-                        self.ollama.current_model = Some(model.clone());
+                if self.llama.loaded() && ui.button("set current model as default").clicked() {
+                    // TODO: set current model as default
+                    ui.close_menu();
+                }
+
+                if !self.llama.is_empty() {
+                    ui.separator();
+                }
+
+                let model_button = |ui: &mut Ui,
+                                    llama: &mut Llama,
+                                    path: &Path,
+                                    model: &ModelInfo,
+                                    choosed: bool| {
+                    let mut response = ui.button(model.name.to_string());
+                    if choosed {
+                        response = response.highlight();
+                    }
+
+                    if response.clicked() && !choosed {
+                        llama.load_model(path, Params::default());
                         ui.close_menu();
                     }
+                };
+
+                if let Some((path, model)) = self
+                    .llama
+                    .current_model()
+                    .map(|(path, model)| (path.to_path_buf(), model.clone()))
+                {
+                    model_button(ui, &mut self.llama, &path, &model, true);
+                }
+
+                let models: Vec<_> = self
+                    .llama
+                    .models()
+                    .into_iter()
+                    .map(|(path, model)| (path.clone(), model.clone()))
+                    .collect();
+                for (path, model) in models {
+                    if let Some((current_model_path, _)) = self.llama.current_model() {
+                        if path == current_model_path {
+                            continue;
+                        }
+                    }
+
+                    model_button(ui, &mut self.llama, &path, &model, false);
                 }
             },
         );
+
+        self.file_dialog.update(ui.ctx());
+
+        if let Some(path) = self.file_dialog.take_picked() {
+            self.llama.load_model(path, Params::default());
+        }
     }
 
     fn main_ui(

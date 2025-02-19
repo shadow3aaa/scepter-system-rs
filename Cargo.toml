@@ -4,12 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-drama_llama = { version = "0.5.2", features = ["cuda", "cuda_f16", "egui"] }
+drama_llama = { git = "https://github.com/shadow3aaa/drama_llama", features = ["cuda", "egui"] }
 eframe = { version = "0.31.0", features = ["persistence", "ron"] }
+egui-file-dialog = "0.9.0"
 egui-snarl = { git = "https://github.com/shadow3aaa/egui-snarl", features = ["serde"]}
 egui_extras = { version = "0.31.0", features = ["image"] }
 egui_material_icons = "0.3.0"
 env_logger = "0.11.6"
+llama-cpp-sys-4 = { git = "https://github.com/shadow3aaa/llama-cpp-rs" }
 ron = "0.8.1"
 serde = { version = "1.0.217", features = ["derive"] }
 uuid = { version = "1.13.1", features = ["v4", "fast-rng"] }

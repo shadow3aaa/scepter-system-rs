@@ -3,11 +3,13 @@ use egui_snarl::{
     ui::{AnyPins, PinInfo, SnarlViewer, WireStyle},
     InPin, InPinId, NodeId, OutPin, Snarl,
 };
+use serde::{Deserialize, Serialize};
 
 use crate::{app::font::body_text, colors};
 
 use super::node::{remove_nodes, NodeOfThought};
 
+#[derive(Serialize, Deserialize)]
 pub struct MindViewer;
 
 impl SnarlViewer<NodeOfThought> for MindViewer {
@@ -149,7 +151,7 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
         snarl: &mut Snarl<NodeOfThought>,
     ) {
         if ui.button("Reset").clicked() {
-            *snarl = snarl_default();
+            *snarl = custom_snarl_default();
             ui.close_menu();
         }
     }
@@ -163,7 +165,7 @@ fn pin_style(dark_mode: bool) -> PinInfo {
         .with_fill(colors::pin(dark_mode))
 }
 
-pub fn snarl_default() -> Snarl<NodeOfThought> {
+pub fn custom_snarl_default() -> Snarl<NodeOfThought> {
     let mut snarl = Snarl::new();
     snarl.insert_node(Pos2::new(0.0, 0.0), NodeOfThought::new(true));
     snarl

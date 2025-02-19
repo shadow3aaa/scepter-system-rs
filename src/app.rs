@@ -1,6 +1,6 @@
 mod font;
+mod llama_wrapper;
 mod navigation_controller;
-mod ollama_wrapper;
 mod page;
 
 use eframe::{

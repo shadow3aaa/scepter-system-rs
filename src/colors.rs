@@ -1,5 +1,22 @@
 use eframe::egui::Color32;
 
+pub fn primer(color: Color32, dark_mode: bool) -> Color32 {
+    let adjustment_factor = |c: u8| -> u8 {
+        if dark_mode {
+            f32::from(c) * 0.8
+        } else {
+            f32::from(c) * 1.2
+        }
+        .clamp(0.0, 255.0) as u8
+    };
+
+    Color32::from_rgb(
+        adjustment_factor(color.r()),
+        adjustment_factor(color.g()),
+        adjustment_factor(color.b()),
+    )
+}
+
 pub const fn conatiner_background(dark_mode: bool) -> Color32 {
     if dark_mode {
         // #424242

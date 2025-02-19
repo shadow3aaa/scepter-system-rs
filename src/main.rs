@@ -1,5 +1,6 @@
 #![deny(clippy::all, clippy::pedantic)]
 #![warn(clippy::nursery)]
+#![allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
 mod app;
