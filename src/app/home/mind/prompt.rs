@@ -88,7 +88,7 @@ impl ConceptStreamParser {
 
     fn parse(&mut self) {
         let mut reader = Reader::from_str(&self.buffer);
-        reader.trim_text(true);
+        reader.config_mut().trim_text(true);
 
         let mut buf = Vec::new();
         let mut core = String::new();
