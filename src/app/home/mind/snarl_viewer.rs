@@ -1,16 +1,34 @@
+use std::{collections::HashMap, sync::Arc, thread};
+
 use eframe::egui::{Pos2, Ui};
 use egui_snarl::{
-    ui::{AnyPins, PinInfo, SnarlViewer, WireStyle},
-    InPin, InPinId, NodeId, OutPin, Snarl,
+    ui::{AnyPins, PinInfo, SnarlPin, SnarlViewer, WireStyle},
+    InPin, InPinId, NodeId, OutPin, OutPinId, Snarl,
 };
-use serde::{Deserialize, Serialize};
+use parking_lot::RwLock;
 
 use crate::{app::font::body_text, colors};
 
-use super::node::{remove_nodes, NodeOfThought};
+use super::{
+    custom_snarl_default,
+    llm_adapters::ollama_adapter::OllamaAdapter,
+    node::{remove_nodes, NodeOfThought},
+    prompt::{self, Concept, ConceptStreamParser},
+};
 
-#[derive(Serialize, Deserialize)]
-pub struct MindViewer;
+pub struct MindViewer {
+    snarl: Arc<RwLock<Snarl<NodeOfThought>>>,
+    adapter: Arc<RwLock<OllamaAdapter>>,
+}
+
+impl MindViewer {
+    pub const fn new(
+        snarl: Arc<RwLock<Snarl<NodeOfThought>>>,
+        adapter: Arc<RwLock<OllamaAdapter>>,
+    ) -> Self {
+        Self { snarl, adapter }
+    }
+}
 
 impl SnarlViewer<NodeOfThought> for MindViewer {
     fn connect(&mut self, from: &OutPin, to: &InPin, snarl: &mut Snarl<NodeOfThought>) {
@@ -41,7 +59,7 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
         ui: &mut Ui,
         _scale: f32,
         _snarl: &mut Snarl<NodeOfThought>,
-    ) -> PinInfo {
+    ) -> impl SnarlPin + 'static {
         pin_style(ui.style().visuals.dark_mode)
     }
 
@@ -55,7 +73,7 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
         ui: &mut Ui,
         _scale: f32,
         _snarl: &mut Snarl<NodeOfThought>,
-    ) -> PinInfo {
+    ) -> impl SnarlPin + 'static {
         pin_style(ui.style().visuals.dark_mode)
     }
 
@@ -92,7 +110,59 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
         ui.separator();
 
         if ui.button("Divergence").clicked() {
-            // TODO: Implement auto-divergence
+            let parent_concept = snarl[node].concept.clone();
+            let parent_clarification = snarl[node].clarification.clone();
+
+            let messages = prompt::divergence(&Concept {
+                core: parent_concept,
+                clarification: parent_clarification,
+            });
+
+            {
+                let snarl = self.snarl.clone();
+                let adapter = self.adapter.clone();
+
+                thread::spawn(move || {
+                    let rx = adapter
+                        .read()
+                        .chat("deepseek-r1:14b-qwen-distill-q8_0", messages);
+                    let mut parser = ConceptStreamParser::new();
+                    let mut y_offset = 100.0;
+                    let base_pos = snarl.read()[node].rect.center();
+
+                    let mut new_nodes: HashMap<usize, NodeId> = HashMap::new();
+
+                    while let Ok(content) = rx.recv() {
+                        parser.push_chunk(&content);
+                        println!("concepts: {:#?}", parser.concepts());
+
+                        for (index, concept) in parser.concepts().iter().enumerate() {
+                            if let Some(node) = new_nodes.get(&index) {
+                                snarl.write()[*node].concept.clone_from(&concept.core);
+                                snarl.write()[*node]
+                                    .clarification
+                                    .clone_from(&concept.clarification);
+                            } else {
+                                let new_node = snarl.write().insert_node(
+                                    Pos2::new(base_pos.x, base_pos.y + y_offset),
+                                    NodeOfThought::new(false),
+                                );
+
+                                let out_pin = OutPinId { node, output: 0 };
+                                let in_pin = InPinId {
+                                    node: new_node,
+                                    input: 0,
+                                };
+                                snarl.write()[node].connect(new_node);
+                                snarl.write().connect(out_pin, in_pin);
+                                y_offset += 80.0;
+                                new_nodes.insert(index, new_node);
+                            }
+                        }
+                    }
+                });
+            }
+
             ui.close_menu();
         }
 
@@ -126,9 +196,10 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
                 ui.close_menu();
             }
             AnyPins::Out(src_pin) => {
+                ui.set_min_width(100.0);
                 ui.label("Add node");
                 ui.separator();
-                if ui.button("Divergence(Manually)").clicked() {
+                if ui.button("Divergence").clicked() {
                     let node = snarl.insert_node(pos, NodeOfThought::new(false));
                     let id = InPinId { node, input: 0 };
 
@@ -163,10 +234,4 @@ fn pin_style(dark_mode: bool) -> PinInfo {
             corner_radius: 25.0,
         })
         .with_fill(colors::pin(dark_mode))
-}
-
-pub fn custom_snarl_default() -> Snarl<NodeOfThought> {
-    let mut snarl = Snarl::new();
-    snarl.insert_node(Pos2::new(0.0, 0.0), NodeOfThought::new(true));
-    snarl
 }

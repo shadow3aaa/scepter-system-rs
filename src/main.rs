@@ -5,6 +5,7 @@
 
 mod app;
 mod colors;
+mod framework;
 
 use app::App;
 use eframe::egui;

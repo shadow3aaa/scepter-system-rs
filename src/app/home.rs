@@ -1,14 +1,20 @@
+mod mind;
+
 use eframe::egui::{Frame, Ui};
+use mind::MindPage;
 
-use crate::app::font::{heading_text, super_label_text};
+use crate::{
+    app::font::{heading_text, super_label_text},
+    framework::Page,
+};
 
-use super::{mind::MindPage, NavigationController, Page};
+use super::NavigationController;
 
 #[derive(Default)]
 pub struct HomePage;
 
 impl Page for HomePage {
-    fn main_ui(
+    fn main(
         &mut self,
         ui: &mut Ui,
         frame: &mut eframe::Frame,
@@ -21,7 +27,7 @@ impl Page for HomePage {
             Frame::NONE.outer_margin(5).show(ui, |ui| {
                 ui.style_mut().visuals.button_frame = false;
                 if ui.button(super_label_text("Mind")).clicked() {
-                    let page = MindPage::new(frame.storage().unwrap());
+                    let page = MindPage::new();
                     nav_controller.push(Box::new(page), frame.storage_mut().unwrap());
                 }
                 ui.button(super_label_text("Settings")).clicked();

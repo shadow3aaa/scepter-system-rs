@@ -1,7 +1,5 @@
 mod font;
-mod llama_wrapper;
-mod navigation_controller;
-mod page;
+mod home;
 
 use eframe::{
     egui::{self, Theme},
@@ -10,8 +8,9 @@ use eframe::{
 use egui_material_icons::icons::{ICON_ARROW_BACK, ICON_DARK_MODE, ICON_HOME, ICON_LIGHT_MODE};
 
 use font::{label_text, set_font, COLOR_DISABLED};
-use navigation_controller::NavigationController;
-use page::home::HomePage;
+use home::HomePage;
+
+use crate::framework::NavigationController;
 
 pub struct App {
     nav_controller: Box<NavigationController>,

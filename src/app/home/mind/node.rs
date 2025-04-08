@@ -1,25 +1,37 @@
 use eframe::egui::{Frame, TextEdit, Ui};
 use egui_snarl::{NodeId, Snarl};
-use serde::{Deserialize, Serialize};
 
 use crate::{app::font::label_text, colors};
 
-#[derive(Serialize, Deserialize)]
 pub struct NodeOfThought {
     pub is_root: bool,
     pub concept: String,
     pub clarification: String,
     pub childs: Vec<NodeId>,
+    pub rect: eframe::egui::Rect,
 }
 
 impl NodeOfThought {
-    pub const fn new(is_root: bool) -> Self {
-        Self {
+    pub fn with_concept(mut self, concept: &str) -> Self {
+        self.concept = concept.to_string();
+        self
+    }
+}
+
+impl NodeOfThought {
+    pub fn new(is_root: bool) -> Self {
+        let mut node = Self {
             is_root,
             concept: String::new(),
             clarification: String::new(),
             childs: Vec::new(),
-        }
+            rect: eframe::egui::Rect::NAN, // 临时值，将在布局时更新
+        };
+        node.rect = eframe::egui::Rect::from_min_size(
+            eframe::egui::Pos2::ZERO,
+            eframe::egui::Vec2::new(200.0, 100.0),
+        );
+        node
     }
 
     pub fn connect(&mut self, node: NodeId) {
@@ -37,6 +49,7 @@ impl NodeOfThought {
                 TextEdit::multiline(&mut self.concept)
                     .background_color(colors::editor(ui.style().visuals.dark_mode))
                     .margin(ui.spacing().item_spacing)
+                    .interactive(self.childs.is_empty())
                     .show(ui);
 
                 ui.add_space(5.0);
