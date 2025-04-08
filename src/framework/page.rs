@@ -26,6 +26,15 @@ pub trait Page {
         let _ = (ui, frame, nav_controller);
     }
 
+    fn side_panel(
+        &mut self,
+        ui: &mut Ui,
+        frame: &mut Frame,
+        nav_controller: &mut NavigationController,
+    ) {
+        let _ = (ui, frame, nav_controller);
+    }
+
     /// Main of the page
     fn main(&mut self, ui: &mut Ui, frame: &mut Frame, nav_controller: &mut NavigationController);
 }

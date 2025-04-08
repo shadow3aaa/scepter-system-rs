@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use thiserror::Error;
 
+use super::Message;
+
 #[derive(Debug, Error)]
 pub enum OllamaError {
     #[error("HTTP error: {0}")]
@@ -20,41 +22,9 @@ pub enum OllamaError {
 
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
-
-    #[error("Ollama error: {0}")]
-    ApiError(String),
 }
 
 pub type Result<T> = std::result::Result<T, OllamaError>;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Message {
-    pub role: String,
-    pub content: String,
-}
-
-impl Message {
-    pub fn user(content: impl Into<String>) -> Self {
-        Self {
-            role: "user".to_string(),
-            content: content.into(),
-        }
-    }
-
-    pub fn assistant(content: impl Into<String>) -> Self {
-        Self {
-            role: "assistant".to_string(),
-            content: content.into(),
-        }
-    }
-
-    pub fn system(content: impl Into<String>) -> Self {
-        Self {
-            role: "system".to_string(),
-            content: content.into(),
-        }
-    }
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ModelInfo {
@@ -102,15 +72,23 @@ pub struct ChatResponse {
     pub done: bool,
 }
 
+pub struct OllamaAdapterConfig {
+    pub base_url: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct OllamaAdapter {
     base_url: String,
+    #[serde(skip)]
     client: Client,
 }
 
 impl OllamaAdapter {
-    pub fn new(base_url: Option<String>) -> Self {
+    pub fn new(config: OllamaAdapterConfig) -> Self {
         Self {
-            base_url: base_url.unwrap_or_else(|| "http://localhost:11434".to_string()),
+            base_url: config
+                .base_url
+                .unwrap_or_else(|| "http://localhost:11434".to_string()),
             client: Client::new(),
         }
     }

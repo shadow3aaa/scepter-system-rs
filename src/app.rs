@@ -1,5 +1,5 @@
 mod font;
-mod home;
+mod mind;
 
 use eframe::{
     egui::{self, Theme},
@@ -8,7 +8,7 @@ use eframe::{
 use egui_material_icons::icons::{ICON_ARROW_BACK, ICON_DARK_MODE, ICON_HOME, ICON_LIGHT_MODE};
 
 use font::{label_text, set_font, COLOR_DISABLED};
-use home::HomePage;
+use mind::MindPage;
 
 use crate::framework::NavigationController;
 
@@ -20,7 +20,7 @@ impl App {
     pub fn setup(context: &CreationContext<'_>) -> Self {
         set_font(&context.egui_ctx);
         Self {
-            nav_controller: NavigationController::new(Box::new(HomePage)),
+            nav_controller: NavigationController::new(Box::new(MindPage::new())),
         }
     }
 }
@@ -58,7 +58,7 @@ impl eframe::App for App {
 
                 if ui.button(home_button_label).clicked() && !is_root_page {
                     self.nav_controller
-                        .set_current_page(Box::new(HomePage), frame.storage_mut().unwrap());
+                        .set_current_page(Box::new(MindPage::new()), frame.storage_mut().unwrap());
                 }
 
                 if ui.button(back_button_label).clicked() && !is_root_page {
@@ -76,6 +76,13 @@ impl eframe::App for App {
                 self.nav_controller.top_panel_ui(ui, frame);
             });
         });
+
+        egui::SidePanel::left("left_panel")
+            .resizable(false)
+            .show(ctx, |ui| {
+                ui.set_width(150.0);
+                self.nav_controller.side_panel_ui(ui, frame);
+            });
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.style_mut().debug.show_unaligned = false;

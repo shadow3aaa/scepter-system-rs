@@ -1,9 +1,10 @@
+mod history_card;
 mod llm_adapters;
 mod node;
 mod prompt;
 mod snarl_viewer;
 
-use std::sync::Arc;
+use std::{collections::VecDeque, sync::Arc};
 
 use eframe::egui::{Color32, CornerRadius, Frame, Margin, Shadow, Stroke, Ui};
 use egui::Pos2;
@@ -12,24 +13,44 @@ use egui_snarl::{
     ui::{NodeLayout, PinPlacement, SnarlStyle},
     Snarl,
 };
-use llm_adapters::ollama_adapter::OllamaAdapter;
+use llm_adapters::LLMAdapters;
 use parking_lot::RwLock;
+use serde::{Deserialize, Serialize};
 
-use super::{NavigationController, Page};
-use crate::colors;
+use super::NavigationController;
+use crate::{colors, framework::Page};
 
+use history_card::history_card;
 use node::NodeOfThought;
 use snarl_viewer::MindViewer;
 
-pub struct MindPage {
+#[derive(Serialize, Deserialize)]
+struct SnarlWrapper {
+    #[serde(serialize_with = "crate::serde_utils::arc_rwlock_serde")]
+    #[serde(deserialize_with = "crate::serde_utils::arc_rwlock_deserialize")]
     snarl: Arc<RwLock<Snarl<NodeOfThought>>>,
     viewer: MindViewer,
+}
+
+pub struct MindPage {
     file_dialog: FileDialog,
+    history: VecDeque<SnarlWrapper>,
 }
 
 impl MindPage {
     pub fn new() -> Self {
-        Self::default()
+        let mut history = VecDeque::new();
+        history.push_back(SnarlWrapper {
+            snarl: Arc::new(RwLock::new(custom_snarl_default())),
+            viewer: MindViewer::new(
+                Arc::new(RwLock::new(custom_snarl_default())),
+                Arc::new(RwLock::new(LLMAdapters::new())),
+            ),
+        });
+        Self {
+            file_dialog: FileDialog::new(),
+            history,
+        }
     }
 }
 
@@ -37,25 +58,42 @@ impl Default for MindPage {
     fn default() -> Self {
         let snarl = custom_snarl_default();
         let snarl = Arc::new(RwLock::new(snarl));
-        let adapter = Arc::new(RwLock::new(OllamaAdapter::new(None)));
+        let adapter = Arc::new(RwLock::new(LLMAdapters::new()));
+
+        let mut history = VecDeque::new();
+        history.push_back(SnarlWrapper {
+            snarl: snarl.clone(),
+            viewer: MindViewer::new(snarl, adapter),
+        });
 
         Self {
-            viewer: MindViewer::new(snarl.clone(), adapter),
-            snarl,
+            history: VecDeque::new(),
             file_dialog: FileDialog::new(),
         }
     }
 }
 
 impl Page for MindPage {
+    fn side_panel(&mut self, ui: &mut Ui, _: &mut eframe::Frame, _: &mut NavigationController) {
+        ui.set_width(ui.available_width());
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            for (index, snarl_wapper) in self.history.iter().enumerate() {
+                let snarl = snarl_wapper.snarl.read();
+                let node = snarl.nodes().next().unwrap();
+                history_card(ui, &node.concept.core, index == 0);
+            }
+        });
+    }
+
     fn main(
         &mut self,
         ui: &mut Ui,
         _frame: &mut eframe::Frame,
         _nav_controller: &mut NavigationController,
     ) {
-        self.snarl.write().show(
-            &mut self.viewer,
+        let snarl_wrapper = self.history.front_mut().unwrap();
+        snarl_wrapper.snarl.write().show(
+            &mut snarl_wrapper.viewer,
             &snarl_style(ui.style().visuals.dark_mode),
             "MinePage",
             ui,

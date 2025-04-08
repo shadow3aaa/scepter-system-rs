@@ -6,6 +6,7 @@
 mod app;
 mod colors;
 mod framework;
+mod serde_utils;
 
 use app::App;
 use eframe::egui;

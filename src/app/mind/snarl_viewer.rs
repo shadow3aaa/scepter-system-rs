@@ -6,25 +6,31 @@ use egui_snarl::{
     InPin, InPinId, NodeId, OutPin, OutPinId, Snarl,
 };
 use parking_lot::RwLock;
+use serde::{Deserialize, Serialize};
 
 use crate::{app::font::body_text, colors};
 
 use super::{
     custom_snarl_default,
-    llm_adapters::ollama_adapter::OllamaAdapter,
+    llm_adapters::LLMAdapters,
     node::{remove_nodes, NodeOfThought},
     prompt::{self, Concept, ConceptStreamParser},
 };
 
+#[derive(Serialize, Deserialize)]
 pub struct MindViewer {
+    #[serde(serialize_with = "crate::serde_utils::arc_rwlock_serde")]
+    #[serde(deserialize_with = "crate::serde_utils::arc_rwlock_deserialize")]
     snarl: Arc<RwLock<Snarl<NodeOfThought>>>,
-    adapter: Arc<RwLock<OllamaAdapter>>,
+    #[serde(serialize_with = "crate::serde_utils::arc_rwlock_serde")]
+    #[serde(deserialize_with = "crate::serde_utils::arc_rwlock_deserialize")]
+    adapter: Arc<RwLock<LLMAdapters>>,
 }
 
 impl MindViewer {
     pub const fn new(
         snarl: Arc<RwLock<Snarl<NodeOfThought>>>,
-        adapter: Arc<RwLock<OllamaAdapter>>,
+        adapter: Arc<RwLock<LLMAdapters>>,
     ) -> Self {
         Self { snarl, adapter }
     }
@@ -64,7 +70,7 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
     }
 
     fn outputs(&mut self, node: &NodeOfThought) -> usize {
-        usize::from(!node.concept.trim().is_empty())
+        usize::from(!node.concept.core.trim().is_empty())
     }
 
     fn show_output(
@@ -110,11 +116,11 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
         ui.separator();
 
         if ui.button("Divergence").clicked() {
-            let parent_concept = snarl[node].concept.clone();
-            let parent_clarification = snarl[node].clarification.clone();
+            let parent_core = snarl[node].concept.core.clone();
+            let parent_clarification = snarl[node].concept.clarification.clone();
 
             let messages = prompt::divergence(&Concept {
-                core: parent_concept,
+                core: parent_core,
                 clarification: parent_clarification,
             });
 
@@ -123,9 +129,10 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
                 let adapter = self.adapter.clone();
 
                 thread::spawn(move || {
-                    let rx = adapter
-                        .read()
-                        .chat("deepseek-r1:14b-qwen-distill-q8_0", messages);
+                    let Some(rx) = adapter.read().chat(messages) else {
+                        return;
+                    };
+
                     let mut parser = ConceptStreamParser::new();
                     let mut y_offset = 100.0;
                     let base_pos = snarl.read()[node].rect.center();
@@ -138,8 +145,9 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
 
                         for (index, concept) in parser.concepts().iter().enumerate() {
                             if let Some(node) = new_nodes.get(&index) {
-                                snarl.write()[*node].concept.clone_from(&concept.core);
+                                snarl.write()[*node].concept.core.clone_from(&concept.core);
                                 snarl.write()[*node]
+                                    .concept
                                     .clarification
                                     .clone_from(&concept.clarification);
                             } else {
@@ -178,7 +186,7 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
         snarl: &mut Snarl<NodeOfThought>,
     ) -> bool {
         match src_pins {
-            AnyPins::Out(out_pin_ids) => !snarl[out_pin_ids[0].node].concept.trim().is_empty(),
+            AnyPins::Out(out_pin_ids) => !snarl[out_pin_ids[0].node].concept.core.trim().is_empty(),
             AnyPins::In(_) => false,
         }
     }

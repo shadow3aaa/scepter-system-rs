@@ -2,8 +2,9 @@ use std::vec; // Removed io::Cursor
 
 use quick_xml::events::Event;
 use quick_xml::Reader;
+use serde::{Deserialize, Serialize};
 
-use super::llm_adapters::ollama_adapter::Message;
+use super::llm_adapters::Message;
 
 pub fn divergence(concept: &Concept) -> Vec<Message> {
     vec![
@@ -53,7 +54,7 @@ pub fn divergence(concept: &Concept) -> Vec<Message> {
     ]
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Concept {
     pub core: String,
     pub clarification: String,

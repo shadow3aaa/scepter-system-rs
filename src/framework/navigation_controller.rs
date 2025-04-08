@@ -59,6 +59,11 @@ impl NavigationController {
         self.current_page().top_panel(ui, frame, nav_ref);
     }
 
+    pub fn side_panel_ui(&mut self, ui: &mut Ui, frame: &mut Frame) {
+        let nav_ref = self.safe_self_ref();
+        self.current_page().side_panel(ui, frame, nav_ref);
+    }
+
     pub fn main_ui(&mut self, ui: &mut Ui, frame: &mut Frame) {
         let nav_ref = self.safe_self_ref(); // this is fucking safe if nobody fucks the memory
         self.current_page().main(ui, frame, nav_ref);

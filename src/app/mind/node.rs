@@ -1,19 +1,22 @@
 use eframe::egui::{Frame, TextEdit, Ui};
 use egui_snarl::{NodeId, Snarl};
+use serde::{Deserialize, Serialize};
 
 use crate::{app::font::label_text, colors};
 
+use super::prompt::Concept;
+
+#[derive(Serialize, Deserialize)]
 pub struct NodeOfThought {
     pub is_root: bool,
-    pub concept: String,
-    pub clarification: String,
+    pub concept: Concept,
     pub childs: Vec<NodeId>,
     pub rect: eframe::egui::Rect,
 }
 
 impl NodeOfThought {
-    pub fn with_concept(mut self, concept: &str) -> Self {
-        self.concept = concept.to_string();
+    pub fn with_concept(mut self, concept: Concept) -> Self {
+        self.concept = concept;
         self
     }
 }
@@ -22,8 +25,7 @@ impl NodeOfThought {
     pub fn new(is_root: bool) -> Self {
         let mut node = Self {
             is_root,
-            concept: String::new(),
-            clarification: String::new(),
+            concept: Concept::default(),
             childs: Vec::new(),
             rect: eframe::egui::Rect::NAN, // 临时值，将在布局时更新
         };
@@ -46,18 +48,18 @@ impl NodeOfThought {
         Frame::NONE.outer_margin(5.0 * scale).show(ui, |ui| {
             ui.vertical(|ui| {
                 ui.label(label_text("Concept"));
-                TextEdit::multiline(&mut self.concept)
+                TextEdit::multiline(&mut self.concept.core)
                     .background_color(colors::editor(ui.style().visuals.dark_mode))
                     .margin(ui.spacing().item_spacing)
                     .interactive(self.childs.is_empty())
                     .show(ui);
 
                 ui.add_space(5.0);
-                if !self.concept.trim().is_empty() {
+                if !self.concept.core.trim().is_empty() {
                     ui.label(label_text("Clarification"));
                     ui.add_space(5.0);
 
-                    TextEdit::multiline(&mut self.clarification)
+                    TextEdit::multiline(&mut self.concept.clarification)
                         .background_color(colors::editor(ui.style().visuals.dark_mode))
                         .margin(ui.spacing().item_spacing)
                         .show(ui);
