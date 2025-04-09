@@ -3,9 +3,9 @@ use eframe::egui::Color32;
 pub fn primer(color: Color32, dark_mode: bool) -> Color32 {
     let adjustment_factor = |c: u8| -> u8 {
         if dark_mode {
-            f32::from(c) * 0.8
-        } else {
             f32::from(c) * 1.2
+        } else {
+            f32::from(c) * 0.8
         }
         .clamp(0.0, 255.0) as u8
     };
