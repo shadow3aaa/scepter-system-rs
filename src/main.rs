@@ -3,9 +3,10 @@
 #![allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
+#[macro_use]
+mod framework;
 mod app;
 mod colors;
-mod framework;
 mod serde_utils;
 
 use app::App;

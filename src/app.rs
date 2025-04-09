@@ -20,7 +20,7 @@ impl App {
     pub fn setup(context: &CreationContext<'_>) -> Self {
         set_font(&context.egui_ctx);
         Self {
-            nav_controller: NavigationController::new(Box::new(MindPage::new())),
+            nav_controller: NavigationController::new(Box::new(MindPage::default())),
         }
     }
 }
@@ -57,8 +57,10 @@ impl eframe::App for App {
                 };
 
                 if ui.button(home_button_label).clicked() && !is_root_page {
-                    self.nav_controller
-                        .set_current_page(Box::new(MindPage::new()), frame.storage_mut().unwrap());
+                    self.nav_controller.set_current_page(
+                        Box::new(MindPage::default()),
+                        frame.storage_mut().unwrap(),
+                    );
                 }
 
                 if ui.button(back_button_label).clicked() && !is_root_page {
@@ -80,12 +82,15 @@ impl eframe::App for App {
         egui::SidePanel::left("left_panel")
             .resizable(false)
             .show(ctx, |ui| {
-                ui.set_width(150.0);
+                ui.set_width(200.0);
                 self.nav_controller.side_panel_ui(ui, frame);
             });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.style_mut().debug.show_unaligned = false;
+            #[cfg(debug_assertions)]
+            {
+                ui.style_mut().debug.show_unaligned = false;
+            }
             self.nav_controller.main_ui(ui, frame);
         });
     }

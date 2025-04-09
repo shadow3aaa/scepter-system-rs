@@ -72,68 +72,25 @@ pub struct ChatResponse {
     pub done: bool,
 }
 
-pub struct OllamaAdapterConfig {
-    pub base_url: Option<String>,
-}
-
 #[derive(Serialize, Deserialize)]
 pub struct OllamaAdapter {
-    base_url: String,
-    #[serde(skip)]
-    client: Client,
+    pub model: String,
+    pub base_url: String,
 }
 
 impl OllamaAdapter {
-    pub fn new(config: OllamaAdapterConfig) -> Self {
+    pub fn new(model: String, base_url: Option<String>) -> Self {
         Self {
-            base_url: config
-                .base_url
-                .unwrap_or_else(|| "http://localhost:11434".to_string()),
-            client: Client::new(),
+            model,
+            base_url: base_url.unwrap_or_else(|| "http://localhost:11434".to_string()),
         }
     }
 
-    pub fn list_models(&self) -> Result<Vec<ModelInfo>> {
-        let url = format!("{}/api/tags", self.base_url);
-        let response = self.client.get(&url).send()?;
-        let data: ListModelsResponse = response.json()?;
-        Ok(data.models)
-    }
-
-    pub fn generate(&self, model: &str, prompt: &str) -> Receiver<String> {
-        let (tx, rx) = mpsc::channel();
-
-        let url = format!("{}/api/generate", self.base_url);
-        let model_name = model.to_string();
-        let prompt_text = prompt.to_string();
-
-        thread::spawn(move || {
-            let client = Client::new();
-            let request = GenerateRequest {
-                model: model_name,
-                prompt: prompt_text,
-                stream: true,
-                options: None,
-            };
-
-            match client.post(&url).json(&request).send() {
-                Ok(response) => {
-                    Self::process_generate_response(response, &tx);
-                }
-                Err(err) => {
-                    let _ = tx.send(format!("Error: {err}"));
-                }
-            }
-        });
-
-        rx
-    }
-
-    pub fn chat(&self, model: &str, messages: Vec<Message>) -> Receiver<String> {
+    pub fn chat(&self, messages: Vec<Message>) -> Receiver<String> {
         let (tx, rx) = mpsc::channel();
 
         let url = format!("{}/api/chat", self.base_url);
-        let model_name = model.to_string();
+        let model_name = self.model.clone();
         let messages_clone = messages;
 
         thread::spawn(move || {
@@ -159,40 +116,6 @@ impl OllamaAdapter {
         rx
     }
 
-    fn process_generate_response(response: Response, tx: &Sender<String>) {
-        let reader = BufReader::new(response);
-
-        for line in reader.lines() {
-            match line {
-                Ok(line) => {
-                    if line.is_empty() {
-                        continue;
-                    }
-
-                    if let Some(data) = line.strip_prefix("data: ") {
-                        if data == "[DONE]" {
-                            break;
-                        }
-
-                        match serde_json::from_str::<GenerateResponse>(data) {
-                            Ok(parsed) => {
-                                let _ = tx.send(parsed.response);
-                                if parsed.done {
-                                    break;
-                                }
-                            }
-                            Err(_) => continue,
-                        }
-                    }
-                }
-                Err(err) => {
-                    let _ = tx.send(format!("Error reading line: {err}"));
-                    break;
-                }
-            }
-        }
-    }
-
     fn process_chat_response(response: Response, tx: &Sender<String>) {
         let reader = BufReader::new(response);
 
@@ -203,7 +126,6 @@ impl OllamaAdapter {
                         continue;
                     }
 
-                    // 直接对整行数据进行 JSON 解析，而不做 strip_prefix
                     match serde_json::from_str::<ChatResponse>(&line) {
                         Ok(parsed) => {
                             let _ = tx.send(parsed.message.content);
@@ -213,7 +135,6 @@ impl OllamaAdapter {
                         }
                         Err(err) => {
                             eprintln!("Parse error: {err} in line: {line}");
-                            continue;
                         }
                     }
                 }

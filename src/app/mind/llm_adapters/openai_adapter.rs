@@ -78,57 +78,29 @@ pub struct Delta {
     pub content: Option<String>,
 }
 
-pub struct OpenAIAdapterConfig {
-    pub api_key: Option<String>,
-    pub base_url: Option<String>,
-}
-
 #[derive(Serialize, Deserialize)]
 pub struct OpenAIAdapter {
-    base_url: String,
-    api_key: String,
-    #[serde(skip)]
-    client: Client,
+    pub model: String,
+    pub base_url: String,
+    pub api_key: String,
 }
 
 impl OpenAIAdapter {
-    pub fn new(config: OpenAIAdapterConfig) -> Result<Self> {
-        Ok(Self {
-            base_url: config
-                .base_url
-                .unwrap_or_else(|| "https://api.openai.com/v1".to_string()),
-            api_key: config.api_key.ok_or(OpenAIError::ApiKeyMissing)?,
-            client: Client::new(),
-        })
-    }
-
-    // Placeholder for list_models implementation
-    pub fn list_models(&self) -> Result<Vec<ModelInfo>> {
-        let url = format!("{}/models", self.base_url);
-        let response = self.client.get(&url).bearer_auth(&self.api_key).send()?;
-
-        if !response.status().is_success() {
-            return Err(OpenAIError::ApiError(format!(
-                "API request failed with status {}: {}",
-                response.status(),
-                response
-                    .text()
-                    .unwrap_or_else(|_| "Failed to read error body".to_string())
-            )));
+    pub fn new(model: String, base_url: Option<String>, api_key: String) -> Self {
+        Self {
+            model,
+            base_url: base_url.unwrap_or_else(|| "https://api.openai.com/v1".to_string()),
+            api_key,
         }
-
-        let data: ListModelsResponse = response.json()?;
-        Ok(data.data)
     }
 
-    // Placeholder for chat implementation
-    pub fn chat(&self, model: &str, messages: Vec<Message>) -> Receiver<String> {
+    pub fn chat(&self, messages: Vec<Message>) -> Receiver<String> {
         let (tx, rx) = mpsc::channel();
 
         let url = format!("{}/chat/completions", self.base_url);
-        let model_name = model.to_string();
+        let model_name = self.model.clone();
         let messages_clone = messages;
-        let client = self.client.clone();
+        let client = Client::new();
         let api_key = self.api_key.clone();
 
         thread::spawn(move || {
@@ -197,7 +169,6 @@ impl OpenAIAdapter {
                                 eprintln!(
                                     "Error parsing OpenAI stream chunk: {err}, line: '{data}'"
                                 );
-                                continue;
                             }
                         }
                     } else if !line.trim().is_empty() {
