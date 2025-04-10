@@ -45,7 +45,6 @@ pub enum LLMAdapterWrapper {
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct LLMAdapters {
-    current_adapter: Option<usize>,
     pub adapters: VecDeque<LLMAdapterWrapper>,
 }
 
@@ -54,12 +53,12 @@ impl LLMAdapters {
         Self::default()
     }
 
-    pub const fn set_current_adapter(&mut self, index: usize) {
-        self.current_adapter = Some(index);
+    pub fn set_current_adapter(&mut self, index: usize) {
+        self.adapters.swap(0, index);
     }
 
     pub fn get_current_adapter(&self) -> Option<&LLMAdapterWrapper> {
-        self.adapters.get(self.current_adapter?)
+        self.adapters.back()
     }
 
     pub fn chat(&self, messages: Vec<Message>) -> Option<Receiver<String>> {

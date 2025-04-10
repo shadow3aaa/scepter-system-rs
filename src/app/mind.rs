@@ -33,19 +33,12 @@ struct SnarlWrapper {
     viewer: MindViewer,
 }
 
+#[derive(Default)]
 struct AddLLMProvierConfig {
     open_modal: bool,
-    provider: LLMAdapterWrapper,
+    provider: Option<LLMAdapterWrapper>,
 }
 
-impl Default for AddLLMProvierConfig {
-    fn default() -> Self {
-        Self {
-            open_modal: false,
-            provider: LLMAdapterWrapper::Ollama(OllamaAdapter::new("llama3.3".to_string(), None)),
-        }
-    }
-}
 
 #[derive(Serialize, Deserialize)]
 pub struct MindPage {
@@ -53,7 +46,7 @@ pub struct MindPage {
     history: VecDeque<SnarlWrapper>,
     #[serde(serialize_with = "crate::serde_utils::arc_rwlock_serde")]
     #[serde(deserialize_with = "crate::serde_utils::arc_rwlock_deserialize")]
-    adapter: Arc<RwLock<LLMAdapters>>,
+    adapters: Arc<RwLock<LLMAdapters>>,
     #[serde(skip)]
     add_llm_provider_temp: AddLLMProvierConfig,
 }
@@ -73,7 +66,7 @@ impl Default for MindPage {
         Self {
             side_panel_state: SidePanelState::Mind,
             history,
-            adapter,
+            adapters: adapter,
             add_llm_provider_temp: AddLLMProvierConfig::default(),
         }
     }
@@ -108,46 +101,60 @@ impl MindPage {
                 ui.menu_button(
                     format!(
                         "Select provider: {}",
-                        match self.add_llm_provider_temp.provider {
-                            LLMAdapterWrapper::Ollama(_) => "ollama",
-                            LLMAdapterWrapper::OpenAI(_) => "openai compatible",
-                        }
+                        self.add_llm_provider_temp
+                            .provider
+                            .as_ref()
+                            .map_or("None", |provider| {
+                                match provider {
+                                    LLMAdapterWrapper::Ollama(_) => "ollama",
+                                    LLMAdapterWrapper::OpenAI(_) => "openai compatible",
+                                }
+                            })
                     ),
                     |ui| {
                         if ui.button("ollama").clicked() {
-                            self.add_llm_provider_temp.provider = LLMAdapterWrapper::Ollama(
+                            self.add_llm_provider_temp.provider = Some(LLMAdapterWrapper::Ollama(
                                 OllamaAdapter::new("llama3.3".to_string(), None),
-                            );
+                            ));
                             ui.close_menu();
                         }
 
                         if ui.button("openai compatible").clicked() {
-                            self.add_llm_provider_temp.provider = LLMAdapterWrapper::OpenAI(
+                            self.add_llm_provider_temp.provider = Some(LLMAdapterWrapper::OpenAI(
                                 OpenAIAdapter::new("gpt-4o".to_string(), None, String::new()),
-                            );
+                            ));
                             ui.close_menu();
                         }
                     },
                 );
 
-                match &mut self.add_llm_provider_temp.provider {
-                    LLMAdapterWrapper::Ollama(adapter) => {
-                        ui.label("Model");
-                        ui.text_edit_singleline(&mut adapter.model);
-
-                        ui.label("Base URL");
-                        ui.text_edit_singleline(&mut adapter.base_url);
+                if let Some(ref mut provider) = self.add_llm_provider_temp.provider {
+                    match provider {
+                        LLMAdapterWrapper::Ollama(adapter) => {
+                            ui.label("Model");
+                            ui.text_edit_singleline(&mut adapter.model);
+                        }
+                        LLMAdapterWrapper::OpenAI(adapter) => {
+                            ui.label("Model");
+                            ui.text_edit_singleline(&mut adapter.model);
+                            ui.label("API Key");
+                            ui.text_edit_singleline(&mut adapter.api_key);
+                        }
                     }
-                    LLMAdapterWrapper::OpenAI(adapter) => {
-                        ui.label("Model");
-                        ui.text_edit_singleline(&mut adapter.model);
+                }
 
-                        ui.label("Base URL");
-                        ui.text_edit_singleline(&mut adapter.base_url);
-
-                        ui.label("API Key");
-                        ui.text_edit_singleline(&mut adapter.api_key);
-                    }
+                if ui
+                    .add_enabled(
+                        self.add_llm_provider_temp.provider.is_some(),
+                        Button::new("save"),
+                    )
+                    .clicked()
+                {
+                    self.adapters
+                        .write()
+                        .adapters
+                        .push_front(self.add_llm_provider_temp.provider.take().unwrap());
+                    self.add_llm_provider_temp.open_modal = false;
                 }
             })
             .should_close()
@@ -197,7 +204,7 @@ impl Page for MindPage {
                             });
 
                             let mut new_selected_index = None;
-                            for (index, adapter) in self.adapter.read().adapters.iter().enumerate()
+                            for (index, adapter) in self.adapters.read().adapters.iter().enumerate()
                             {
                                 if llm_adapter_card(ui, adapter, index == 0).clicked() {
                                     new_selected_index = Some(index);
@@ -206,7 +213,7 @@ impl Page for MindPage {
 
                             if let Some(index) = new_selected_index {
                                 if index != 0 {
-                                    self.adapter.write().set_current_adapter(index);
+                                    self.adapters.write().set_current_adapter(index);
                                 }
                             }
                         }
@@ -221,7 +228,7 @@ impl Page for MindPage {
                                         snarl: Arc::new(RwLock::new(custom_snarl_default())),
                                         viewer: MindViewer::new(
                                             Arc::new(RwLock::new(custom_snarl_default())),
-                                            self.adapter.clone(),
+                                            self.adapters.clone(),
                                         ),
                                     });
                                 }
