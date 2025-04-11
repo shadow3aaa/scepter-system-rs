@@ -324,6 +324,6 @@ fn snarl_style(dark_mode: bool) -> SnarlStyle {
 
 pub fn custom_snarl_default() -> Snarl<NodeOfThought> {
     let mut snarl = Snarl::new();
-    snarl.insert_node(Pos2::new(0.0, 0.0), NodeOfThought::new(true));
+    snarl.insert_node(Pos2::new(0.0, 0.0), NodeOfThought::new(None));
     snarl
 }

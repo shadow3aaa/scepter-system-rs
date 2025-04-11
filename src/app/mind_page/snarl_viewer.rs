@@ -121,7 +121,10 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
             let messages = prompt::divergence(&Concept {
                 core: parent_core,
                 clarification: parent_clarification,
+                parent: snarl[node].concept.parent.clone(),
             });
+
+            println!("input: {}", messages.last().unwrap().content);
 
             {
                 let snarl = self.snarl.clone();
@@ -139,7 +142,13 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
                     let mut new_nodes: HashMap<usize, NodeId> = HashMap::new();
 
                     while let Ok(content) = rx.recv() {
-                        for (index, concept) in parser.push_chunk(&content).iter().enumerate() {
+                        /* print!("{content}");
+                         flush stdout
+                        let _ = io::stdout().flush(); */
+                        let parent_concept = snarl.read()[node].concept.clone();
+                        for (index, concept) in
+                            parser.push_chunk(&content).sub_concepts.iter().enumerate()
+                        {
                             if let Some(node) = new_nodes.get(&index) {
                                 snarl.write()[*node].concept.core.clone_from(&concept.core);
                                 snarl.write()[*node]
@@ -149,7 +158,7 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
                             } else {
                                 let new_node = snarl.write().insert_node(
                                     Pos2::new(base_pos.x, base_pos.y + y_offset),
-                                    NodeOfThought::new(false),
+                                    NodeOfThought::new(Some(parent_concept.clone())),
                                 );
 
                                 let out_pin = OutPinId { node, output: 0 };
@@ -204,7 +213,10 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
                 ui.label("Add node");
                 ui.separator();
                 if ui.button("Divergence").clicked() {
-                    let node = snarl.insert_node(pos, NodeOfThought::new(false));
+                    let node = snarl.insert_node(
+                        pos,
+                        NodeOfThought::new(Some(snarl[src_pin[0].node].concept.clone())),
+                    );
                     let id = InPinId { node, input: 0 };
 
                     self.connect(&snarl.out_pin(src_pin[0]), &snarl.in_pin(id), snarl);

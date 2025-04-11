@@ -15,17 +15,10 @@ pub struct NodeOfThought {
 }
 
 impl NodeOfThought {
-    pub fn with_concept(mut self, concept: Concept) -> Self {
-        self.concept = concept;
-        self
-    }
-}
-
-impl NodeOfThought {
-    pub fn new(is_root: bool) -> Self {
+    pub fn new(parent_concept: Option<Concept>) -> Self {
         let mut node = Self {
-            is_root,
-            concept: Concept::default(),
+            is_root: parent_concept.is_none(),
+            concept: Concept::new(parent_concept),
             childs: Vec::new(),
             rect: eframe::egui::Rect::NAN,
         };

@@ -1,4 +1,4 @@
-use std::vec; // Removed io::Cursor
+use std::vec;
 
 use quick_xml::events::Event;
 use quick_xml::Reader;
@@ -16,7 +16,7 @@ pub fn divergence(concept: &Concept) -> Vec<Message> {
 - <tag/>: 应为</tag>
 - </tag/>: 应为</tag>
 
-输出示例：
+输出格式示例：
 <concepts>
     <concept>
         <core>
@@ -43,35 +43,46 @@ pub fn divergence(concept: &Concept) -> Vec<Message> {
 
 遵循以下要求：
 
+- 输入概念为最外层概念，内层为父概念仅供参考思考历史，以下要求所指“概念”是指最外层概念。
 - 回答语言使用用户输入概念的语言的主导为主导语言。
 - 内容少而精，避免冗长的描述。
-- 生成的内容应该是概念接近的子领域，避免生成与概念无关或者关系太远的内容。
-- 生成的内容应该是尽量发散到概念的不同方面，避免生成相对重复的内容。
+- 生成内容不能高于原概念，比如输入概念是苹果，输出概念就不能是水果(因为它包括苹果)
+- 生成的内容应该是概念的子领域，比如输入概念是苹果，输出概念就不能是香蕉，芒果，因为他们和苹果的概念平行而不是子集。
+- 生成的内容应该是尽量发散到不同方面，避免生成相对重复的内容。
 
 >>>START OF INPUT
-<concept>
-    <core>
-        {}
-    </core>
-    <clarification>
-        {}
-    </clarification>
-</concept>
+{}
 >>>END OF INPUT
 ",
-            concept.core, concept.clarification
+            quick_xml::se::to_string(concept).unwrap()
         )),
     ]
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Concept {
     pub core: String,
     pub clarification: String,
+    pub parent: Option<Box<Concept>>,
+}
+
+impl Concept {
+    pub fn new(parent: Option<Self>) -> Self {
+        Self {
+            core: String::new(),
+            clarification: String::new(),
+            parent: parent.map(Box::new),
+        }
+    }
 }
 
 pub struct ConceptStreamParser {
     buffer: String,
+}
+
+pub struct ParseResult {
+    pub thinking: Option<String>,
+    pub sub_concepts: Vec<Concept>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -91,13 +102,16 @@ impl ConceptStreamParser {
         }
     }
 
-    pub fn push_chunk(&mut self, chunk: &str) -> Vec<Concept> {
+    pub fn push_chunk(&mut self, chunk: &str) -> ParseResult {
         self.buffer.push_str(chunk);
         self.parse()
     }
 
-    fn parse(&self) -> Vec<Concept> {
-        let mut reader = Reader::from_str(&self.buffer);
+    fn parse(&self) -> ParseResult {
+        let thinking_content = self.thinking_content();
+        let output_content = self.output_content();
+
+        let mut reader = Reader::from_str(&output_content);
         reader.config_mut().trim_text(true);
 
         let mut buf = Vec::new();
@@ -114,7 +128,7 @@ impl ConceptStreamParser {
                         }
                         b"concept" => {
                             tag_state = TagState::InConcept;
-                            output.push(Concept::default());
+                            output.push(Concept::new(None));
                         }
                         b"core" => {
                             tag_state = TagState::InCore;
@@ -133,6 +147,7 @@ impl ConceptStreamParser {
                 },
                 Event::End(ref e) => {
                     if let TagState::Unknown(ref tag) = tag_state {
+                        println!("tag state: {tag_state:?}");
                         if *tag == String::from_utf8_lossy(e.name().into_inner()) {
                             tag_state = TagState::None;
                         }
@@ -176,7 +191,27 @@ impl ConceptStreamParser {
             buf.clear();
         }
 
-        output
+        ParseResult {
+            thinking: thinking_content,
+            sub_concepts: output,
+        }
+    }
+
+    fn thinking_content(&self) -> Option<String> {
+        let think_start_pos = self.buffer.find("<think>")? + "<think>".len();
+        if let Some(think_end_pos) = self.buffer.find("</think>").map(|pos| pos - 1) {
+            Some(self.buffer[think_start_pos..=think_end_pos].to_string())
+        } else {
+            Some(self.buffer[think_start_pos..].to_string())
+        }
+    }
+
+    fn output_content(&self) -> String {
+        let think_end_pos = self
+            .buffer
+            .find("</think>")
+            .map_or(0, |pos| pos + "</think>".len());
+        self.buffer[think_end_pos..].to_string()
     }
 }
 
@@ -193,7 +228,7 @@ mod tests {
         parser.push_chunk("<concept><core>逻辑");
         parser.push_chunk("</core><clarification>研究思维规律");
         parser.push_chunk("</clarification></concept>");
-        let concepts = parser.push_chunk("</concepts>");
+        let concepts = parser.push_chunk("</concepts>").sub_concepts;
 
         assert_eq!(concepts.len(), 1);
         assert_eq!(concepts[0].core, "逻辑");
@@ -209,7 +244,7 @@ mod tests {
         parser.push_chunk("<clarification>研究智能系统的构建</clarification></concept>");
         parser.push_chunk("<concept><core>数学</core><clarification>");
         parser.push_chunk("研究数量和结构</clarification></concept>");
-        let concepts = parser.push_chunk("</concepts>");
+        let concepts = parser.push_chunk("</concepts>").sub_concepts;
 
         assert_eq!(concepts.len(), 2);
         assert_eq!(concepts[0].core, "人工智能");
@@ -222,13 +257,13 @@ mod tests {
     fn test_partial_incomplete_tag_does_not_panic() {
         let mut parser = ConceptStreamParser::new();
         parser.push_chunk("<concepts>");
-        let concepts = parser.push_chunk("<concept><core>未闭合");
+        let concepts = parser.push_chunk("<concept><core>未闭合").sub_concepts;
 
         assert_eq!(concepts.len(), 1);
         assert_eq!(concepts[0].core, "未闭合");
 
         parser.push_chunk("</core><clarification>解释</clarification>");
-        let concepts = parser.push_chunk("</concepts>");
+        let concepts = parser.push_chunk("</concepts>").sub_concepts;
         assert_eq!(concepts[0].core, "未闭合");
         assert_eq!(concepts[0].clarification, "解释");
     }
@@ -240,10 +275,34 @@ mod tests {
         parser.push_chunk("<concepts>");
         parser.push_chunk("<concept><core>概念</core><clarification>描述</clarification>");
         parser.push_chunk("<noise>噪声数据</noise></concept>");
-        let concepts = parser.push_chunk("</concepts>");
+        let concepts = parser.push_chunk("</concepts>").sub_concepts;
 
         assert_eq!(concepts.len(), 1);
         assert_eq!(concepts[0].core, "概念");
         assert_eq!(concepts[0].clarification, "描述");
+    }
+
+    #[test]
+    fn test_thinking_splite() {
+        let mut parser = ConceptStreamParser::new();
+        let concepts = parser.push_chunk(r"
+<think>
+好的，我现在需要处理用户提供的关于“苹果”概念的查询，并生成几个相关的子领域内容。首先，我需要仔细理解用户的要求。用户希望输出符合XML格式的内容，<core>每个子领域用标签包裹，每个子领域使用标签，内部包含和两个标签。
+</think>
+
+<concepts>
+    <concept>
+        <core>蔷薇科</core>
+        <clarification>苹果属于蔷薇科植物</clarification>
+    </concept>
+</concepts>").sub_concepts;
+        assert_eq!(
+            concepts,
+            vec![Concept {
+                core: "蔷薇科".to_string(),
+                clarification: "苹果属于蔷薇科植物".to_string(),
+                parent: None,
+            }]
+        );
     }
 }

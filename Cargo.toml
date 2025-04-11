@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-quick-xml = { version = "0.37.4", features = ["encoding"] }
+quick-xml = { version = "0.37.4", features = ["encoding", "serialize"] }
 egui = "0.31.1"
 eframe = { version = "0.31.1", features = ["persistence", "ron"] }
 egui-file-dialog = "0.9.0"
