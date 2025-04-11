@@ -4,7 +4,10 @@ use crate::colors::{conatiner_background, primer};
 
 use super::llm_adapters::LLMAdapterWrapper;
 
-pub fn mind_history_card(ui: &mut Ui, label: &str, selected: bool) -> Response {
+pub fn mind_history_card<F>(ui: &mut Ui, label: &str, selected: bool, on_delete: F) -> Response
+where
+    F: FnOnce(),
+{
     let dark_mode = ui.style().visuals.dark_mode;
 
     let filled = if selected {
@@ -27,6 +30,9 @@ pub fn mind_history_card(ui: &mut Ui, label: &str, selected: bool) -> Response {
                     label
                 };
                 ui.label(RichText::new(label).text_style(TextStyle::Button));
+                if icon_button!(ui, "delete", false, 13.0).clicked() {
+                    on_delete();
+                }
             })
     })
     .response

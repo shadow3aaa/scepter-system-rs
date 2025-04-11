@@ -233,11 +233,26 @@ impl Page for MindPage {
                             });
 
                             let mut new_selected_index = None;
+                            let mut remove_index = None;
                             for (index, viewer) in self.history.iter().enumerate() {
                                 let snarl = viewer.snarl.read();
                                 let node = snarl.nodes().next().unwrap();
-                                if mind_history_card(ui, &node.concept.core, index == 0).clicked() {
+                                if mind_history_card(ui, &node.concept.core, index == 0, || {
+                                    remove_index = Some(index);
+                                })
+                                .clicked()
+                                {
                                     new_selected_index = Some(index);
+                                }
+                            }
+
+                            if let Some(index) = remove_index {
+                                self.history.remove(index);
+                                if index == 0 {
+                                    self.history.push_back(MindViewer::new(
+                                        custom_snarl_default(),
+                                        self.adapters.clone(),
+                                    ));
                                 }
                             }
 
