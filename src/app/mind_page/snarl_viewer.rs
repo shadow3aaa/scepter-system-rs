@@ -21,18 +21,17 @@ use super::{
 pub struct MindViewer {
     #[serde(serialize_with = "crate::serde_utils::arc_rwlock_serde")]
     #[serde(deserialize_with = "crate::serde_utils::arc_rwlock_deserialize")]
-    snarl: Arc<RwLock<Snarl<NodeOfThought>>>,
-    #[serde(serialize_with = "crate::serde_utils::arc_rwlock_serde")]
-    #[serde(deserialize_with = "crate::serde_utils::arc_rwlock_deserialize")]
-    adapter: Arc<RwLock<LLMAdapters>>,
+    pub snarl: Arc<RwLock<Snarl<NodeOfThought>>>,
+    #[serde(skip)]
+    pub adapters: Option<Arc<RwLock<LLMAdapters>>>,
 }
 
 impl MindViewer {
-    pub const fn new(
-        snarl: Arc<RwLock<Snarl<NodeOfThought>>>,
-        adapter: Arc<RwLock<LLMAdapters>>,
-    ) -> Self {
-        Self { snarl, adapter }
+    pub fn new(snarl: Snarl<NodeOfThought>, adapter: Arc<RwLock<LLMAdapters>>) -> Self {
+        Self {
+            snarl: Arc::new(RwLock::new(snarl)),
+            adapters: Some(adapter),
+        }
     }
 }
 
@@ -126,7 +125,7 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
 
             {
                 let snarl = self.snarl.clone();
-                let adapter = self.adapter.clone();
+                let adapter = self.adapters.as_ref().unwrap().clone();
 
                 thread::spawn(move || {
                     let Some(rx) = adapter.read().chat(messages) else {

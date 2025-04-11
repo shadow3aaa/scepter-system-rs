@@ -37,7 +37,7 @@ impl Message {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum LLMAdapterWrapper {
     Ollama(OllamaAdapter),
     OpenAI(OpenAIAdapter),

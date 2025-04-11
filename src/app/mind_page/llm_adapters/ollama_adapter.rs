@@ -72,7 +72,7 @@ pub struct ChatResponse {
     pub done: bool,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct OllamaAdapter {
     pub model: String,
     pub base_url: String,

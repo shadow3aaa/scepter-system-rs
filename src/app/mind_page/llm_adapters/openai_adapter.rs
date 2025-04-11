@@ -78,7 +78,7 @@ pub struct Delta {
     pub content: Option<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct OpenAIAdapter {
     pub model: String,
     pub base_url: String,

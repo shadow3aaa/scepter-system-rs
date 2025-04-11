@@ -28,14 +28,6 @@ use cards::{llm_adapter_card, mind_history_card};
 use node::NodeOfThought;
 use snarl_viewer::MindViewer;
 
-#[derive(Serialize, Deserialize)]
-struct SnarlWrapper {
-    #[serde(serialize_with = "crate::serde_utils::arc_rwlock_serde")]
-    #[serde(deserialize_with = "crate::serde_utils::arc_rwlock_deserialize")]
-    snarl: Arc<RwLock<Snarl<NodeOfThought>>>,
-    viewer: MindViewer,
-}
-
 #[derive(Default)]
 struct AddLLMProvierConfig {
     open_modal: bool,
@@ -45,7 +37,7 @@ struct AddLLMProvierConfig {
 #[derive(Serialize, Deserialize)]
 pub struct MindPage {
     side_panel_state: SidePanelState,
-    history: VecDeque<SnarlWrapper>,
+    history: VecDeque<MindViewer>,
     #[serde(serialize_with = "crate::serde_utils::arc_rwlock_serde")]
     #[serde(deserialize_with = "crate::serde_utils::arc_rwlock_deserialize")]
     adapters: Arc<RwLock<LLMAdapters>>,
@@ -56,19 +48,15 @@ pub struct MindPage {
 impl Default for MindPage {
     fn default() -> Self {
         let snarl = custom_snarl_default();
-        let snarl = Arc::new(RwLock::new(snarl));
-        let adapter = Arc::new(RwLock::new(LLMAdapters::new()));
+        let adapters = Arc::new(RwLock::new(LLMAdapters::new()));
 
         let mut history = VecDeque::new();
-        history.push_back(SnarlWrapper {
-            snarl: snarl.clone(),
-            viewer: MindViewer::new(snarl, adapter.clone()),
-        });
+        history.push_back(MindViewer::new(snarl, adapters.clone()));
 
         Self {
             side_panel_state: SidePanelState::Mind,
             history,
-            adapters: adapter,
+            adapters,
             add_llm_provider_temp: AddLLMProvierConfig::default(),
         }
     }
@@ -157,6 +145,9 @@ impl Page for MindPage {
     fn on_enter(&mut self, storage: &mut dyn eframe::Storage) {
         if let Some(mind_page) = get_value(storage, "mind_page") {
             *self = mind_page;
+            for viewer in &mut self.history {
+                viewer.adapters = Some(self.adapters.clone());
+            }
         }
     }
 
@@ -235,17 +226,15 @@ impl Page for MindPage {
                                     .add(Button::new("+").fill(Color32::TRANSPARENT).frame(false))
                                     .clicked()
                                 {
-                                    let snarl = Arc::new(RwLock::new(custom_snarl_default()));
-                                    self.history.push_front(SnarlWrapper {
-                                        snarl: snarl.clone(),
-                                        viewer: MindViewer::new(snarl, self.adapters.clone()),
-                                    });
+                                    let snarl = custom_snarl_default();
+                                    self.history
+                                        .push_front(MindViewer::new(snarl, self.adapters.clone()));
                                 }
                             });
 
                             let mut new_selected_index = None;
-                            for (index, snarl_wapper) in self.history.iter().enumerate() {
-                                let snarl = snarl_wapper.snarl.read();
+                            for (index, viewer) in self.history.iter().enumerate() {
+                                let snarl = viewer.snarl.read();
                                 let node = snarl.nodes().next().unwrap();
                                 if mind_history_card(ui, &node.concept.core, index == 0).clicked() {
                                     new_selected_index = Some(index);
@@ -269,9 +258,10 @@ impl Page for MindPage {
         _frame: &mut eframe::Frame,
         _nav_controller: &mut NavigationController,
     ) {
-        let snarl_wrapper = self.history.front_mut().unwrap();
-        snarl_wrapper.snarl.write().show(
-            &mut snarl_wrapper.viewer,
+        let viewer = self.history.front_mut().unwrap();
+        let snarl = viewer.snarl.clone();
+        snarl.write().show(
+            viewer,
             &snarl_style(ui.style().visuals.dark_mode),
             "MinePage",
             ui,
