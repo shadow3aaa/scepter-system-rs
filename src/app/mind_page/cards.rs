@@ -32,7 +32,15 @@ pub fn mind_history_card(ui: &mut Ui, label: &str, selected: bool) -> Response {
     .response
 }
 
-pub fn llm_adapter_card(ui: &mut Ui, adapter: &LLMAdapterWrapper, selected: bool) -> Response {
+pub fn llm_adapter_card<F>(
+    ui: &mut Ui,
+    adapter: &LLMAdapterWrapper,
+    selected: bool,
+    on_delete: F,
+) -> Response
+where
+    F: FnOnce(),
+{
     let dark_mode = ui.style().visuals.dark_mode;
 
     let filled = if selected {
@@ -61,6 +69,9 @@ pub fn llm_adapter_card(ui: &mut Ui, adapter: &LLMAdapterWrapper, selected: bool
                 ui.set_width(ui.available_width());
                 ui.label(RichText::new(model_name).text_style(TextStyle::Button));
                 ui.label(RichText::new(desc_type).text_style(TextStyle::Small));
+                if icon_button!(ui, "delete", false, 13.0).clicked() {
+                    on_delete();
+                }
             })
     })
     .response

@@ -27,17 +27,21 @@ impl NavigationController {
         self.push(page, storage);
     }
 
-    fn current_page(&mut self) -> &mut Box<dyn Page> {
-        self.pages.last_mut().unwrap()
+    fn current_page(&self) -> &dyn Page {
+        self.pages.last().unwrap().as_ref()
     }
 
-    pub fn push(&mut self, page: Box<dyn Page>, storage: &mut dyn Storage) {
+    fn current_page_mut(&mut self) -> &mut dyn Page {
+        self.pages.last_mut().unwrap().as_mut()
+    }
+
+    pub fn push(&mut self, mut page: Box<dyn Page>, storage: &mut dyn Storage) {
         page.on_enter(storage);
         self.pages.push(page);
     }
 
     pub fn pop(&mut self, storage: &mut dyn Storage) {
-        if let Some(page) = self.pages.pop() {
+        if let Some(mut page) = self.pages.pop() {
             page.on_exit(storage);
         }
     }
@@ -56,16 +60,20 @@ impl NavigationController {
 
     pub fn top_panel_ui(&mut self, ui: &mut Ui, frame: &mut Frame) {
         let nav_ref = self.safe_self_ref();
-        self.current_page().top_panel(ui, frame, nav_ref);
+        self.current_page_mut().top_panel(ui, frame, nav_ref);
     }
 
     pub fn side_panel_ui(&mut self, ui: &mut Ui, frame: &mut Frame) {
         let nav_ref = self.safe_self_ref();
-        self.current_page().side_panel(ui, frame, nav_ref);
+        self.current_page_mut().side_panel(ui, frame, nav_ref);
+    }
+
+    pub fn show_side_panel(&self) -> bool {
+        self.current_page().show_side_panel()
     }
 
     pub fn main_ui(&mut self, ui: &mut Ui, frame: &mut Frame) {
         let nav_ref = self.safe_self_ref(); // this is fucking safe if nobody fucks the memory
-        self.current_page().main(ui, frame, nav_ref);
+        self.current_page_mut().main(ui, frame, nav_ref);
     }
 }

@@ -6,7 +6,7 @@ use crate::{app::font::label_text, colors};
 
 use super::prompt::Concept;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NodeOfThought {
     pub is_root: bool,
     pub concept: Concept,
@@ -27,7 +27,7 @@ impl NodeOfThought {
             is_root,
             concept: Concept::default(),
             childs: Vec::new(),
-            rect: eframe::egui::Rect::NAN, // 临时值，将在布局时更新
+            rect: eframe::egui::Rect::NAN,
         };
         node.rect = eframe::egui::Rect::from_min_size(
             eframe::egui::Pos2::ZERO,

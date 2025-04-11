@@ -6,8 +6,11 @@ mod snarl_viewer;
 
 use std::{collections::VecDeque, sync::Arc};
 
-use eframe::egui::{Color32, CornerRadius, Frame, Margin, Shadow, Stroke, Ui};
-use egui::{Button, Image, Layout, Modal, Pos2, Vec2};
+use eframe::{
+    egui::{Color32, CornerRadius, Frame, Margin, Shadow, Stroke, Ui},
+    get_value, set_value,
+};
+use egui::{Button, Layout, Modal, Pos2};
 use egui_snarl::{
     ui::{NodeLayout, PinPlacement, SnarlStyle},
     Snarl,
@@ -38,7 +41,6 @@ struct AddLLMProvierConfig {
     open_modal: bool,
     provider: Option<LLMAdapterWrapper>,
 }
-
 
 #[derive(Serialize, Deserialize)]
 pub struct MindPage {
@@ -76,19 +78,6 @@ impl Default for MindPage {
 enum SidePanelState {
     Settings,
     Mind,
-}
-
-macro_rules! icon_botton {
-    ($ui:expr, $icon:expr, $selected:expr) => {{
-        let mut button = Button::image(
-            Image::new(icon!($icon, $ui.style().visuals.dark_mode))
-                .fit_to_exact_size(Vec2::new(24.0, 24.0)),
-        );
-        if !$selected {
-            button = button.fill(egui::Color32::TRANSPARENT);
-        }
-        $ui.add(button)
-    }};
 }
 
 impl MindPage {
@@ -135,6 +124,8 @@ impl MindPage {
                             ui.text_edit_singleline(&mut adapter.model);
                         }
                         LLMAdapterWrapper::OpenAI(adapter) => {
+                            ui.label("base url");
+                            ui.text_edit_singleline(&mut adapter.base_url);
                             ui.label("Model");
                             ui.text_edit_singleline(&mut adapter.model);
                             ui.label("API Key");
@@ -143,13 +134,7 @@ impl MindPage {
                     }
                 }
 
-                if ui
-                    .add_enabled(
-                        self.add_llm_provider_temp.provider.is_some(),
-                        Button::new("save"),
-                    )
-                    .clicked()
-                {
+                if ui.button("save").clicked() && self.add_llm_provider_temp.provider.is_some() {
                     self.adapters
                         .write()
                         .adapters
@@ -165,18 +150,35 @@ impl MindPage {
 }
 
 impl Page for MindPage {
+    fn save(&self, storage: &mut dyn eframe::Storage) {
+        set_value(storage, "mind_page", self);
+    }
+
+    fn on_enter(&mut self, storage: &mut dyn eframe::Storage) {
+        if let Some(mind_page) = get_value(storage, "mind_page") {
+            *self = mind_page;
+        }
+    }
+
     fn side_panel(&mut self, ui: &mut Ui, _: &mut eframe::Frame, _: &mut NavigationController) {
         ui.with_layout(Layout::left_to_right(egui::Align::Center), |ui| {
             ui.vertical(|ui| {
-                if icon_botton!(ui, "mind", self.side_panel_state == SidePanelState::Mind).clicked()
+                if icon_button!(
+                    ui,
+                    "mind",
+                    self.side_panel_state == SidePanelState::Mind,
+                    24.0
+                )
+                .clicked()
                 {
                     self.side_panel_state = SidePanelState::Mind;
                 }
 
-                if icon_botton!(
+                if icon_button!(
                     ui,
                     "settings",
-                    self.side_panel_state == SidePanelState::Settings
+                    self.side_panel_state == SidePanelState::Settings,
+                    24.0
                 )
                 .clicked()
                 {
@@ -204,11 +206,20 @@ impl Page for MindPage {
                             });
 
                             let mut new_selected_index = None;
+                            let mut remove_index = None;
                             for (index, adapter) in self.adapters.read().adapters.iter().enumerate()
                             {
-                                if llm_adapter_card(ui, adapter, index == 0).clicked() {
+                                if llm_adapter_card(ui, adapter, index == 0, || {
+                                    remove_index = Some(index);
+                                })
+                                .clicked()
+                                {
                                     new_selected_index = Some(index);
                                 }
+                            }
+
+                            if let Some(index) = remove_index {
+                                self.adapters.write().adapters.remove(index);
                             }
 
                             if let Some(index) = new_selected_index {
@@ -224,12 +235,10 @@ impl Page for MindPage {
                                     .add(Button::new("+").fill(Color32::TRANSPARENT).frame(false))
                                     .clicked()
                                 {
+                                    let snarl = Arc::new(RwLock::new(custom_snarl_default()));
                                     self.history.push_front(SnarlWrapper {
-                                        snarl: Arc::new(RwLock::new(custom_snarl_default())),
-                                        viewer: MindViewer::new(
-                                            Arc::new(RwLock::new(custom_snarl_default())),
-                                            self.adapters.clone(),
-                                        ),
+                                        snarl: snarl.clone(),
+                                        viewer: MindViewer::new(snarl, self.adapters.clone()),
                                     });
                                 }
                             });

@@ -8,11 +8,11 @@ pub trait Page {
         let _ = storage;
     }
 
-    fn on_enter(&self, storage: &mut dyn Storage) {
-        self.save(storage);
+    fn on_enter(&mut self, storage: &mut dyn Storage) {
+        let _ = storage;
     }
 
-    fn on_exit(&self, storage: &mut dyn Storage) {
+    fn on_exit(&mut self, storage: &mut dyn Storage) {
         self.save(storage);
     }
 
@@ -33,6 +33,10 @@ pub trait Page {
         nav_controller: &mut NavigationController,
     ) {
         let _ = (ui, frame, nav_controller);
+    }
+
+    fn show_side_panel(&self) -> bool {
+        true
     }
 
     /// Main of the page

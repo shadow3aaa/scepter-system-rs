@@ -128,7 +128,6 @@ impl OllamaAdapter {
 
                     match serde_json::from_str::<ChatResponse>(&line) {
                         Ok(parsed) => {
-                            print!("{}", parsed.message.content);
                             let _ = tx.send(parsed.message.content);
                             if parsed.done {
                                 break;

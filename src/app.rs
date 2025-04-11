@@ -1,5 +1,6 @@
 mod font;
-mod mind;
+mod mind_page;
+mod splash_page;
 
 use eframe::{
     egui::{self, Theme},
@@ -8,7 +9,8 @@ use eframe::{
 use egui_material_icons::icons::{ICON_ARROW_BACK, ICON_DARK_MODE, ICON_HOME, ICON_LIGHT_MODE};
 
 use font::{label_text, set_font, COLOR_DISABLED};
-use mind::MindPage;
+use mind_page::MindPage;
+use splash_page::SplashPage;
 
 use crate::framework::NavigationController;
 
@@ -20,7 +22,7 @@ impl App {
     pub fn setup(context: &CreationContext<'_>) -> Self {
         set_font(&context.egui_ctx);
         Self {
-            nav_controller: NavigationController::new(Box::new(MindPage::default())),
+            nav_controller: NavigationController::new(Box::new(SplashPage::default())),
         }
     }
 }
@@ -79,12 +81,14 @@ impl eframe::App for App {
             });
         });
 
-        egui::SidePanel::left("left_panel")
-            .resizable(false)
-            .show(ctx, |ui| {
-                ui.set_width(200.0);
-                self.nav_controller.side_panel_ui(ui, frame);
-            });
+        if self.nav_controller.show_side_panel() {
+            egui::SidePanel::left("left_panel")
+                .resizable(false)
+                .show(ctx, |ui| {
+                    ui.set_width(200.0);
+                    self.nav_controller.side_panel_ui(ui, frame);
+                });
+        }
 
         egui::CentralPanel::default().show(ctx, |ui| {
             #[cfg(debug_assertions)]

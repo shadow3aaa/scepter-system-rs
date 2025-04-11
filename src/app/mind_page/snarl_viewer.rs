@@ -140,10 +140,7 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
                     let mut new_nodes: HashMap<usize, NodeId> = HashMap::new();
 
                     while let Ok(content) = rx.recv() {
-                        parser.push_chunk(&content);
-                        println!("concepts: {:#?}", parser.concepts());
-
-                        for (index, concept) in parser.concepts().iter().enumerate() {
+                        for (index, concept) in parser.push_chunk(&content).iter().enumerate() {
                             if let Some(node) = new_nodes.get(&index) {
                                 snarl.write()[*node].concept.core.clone_from(&concept.core);
                                 snarl.write()[*node]

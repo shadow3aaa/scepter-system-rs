@@ -58,7 +58,7 @@ impl LLMAdapters {
     }
 
     pub fn get_current_adapter(&self) -> Option<&LLMAdapterWrapper> {
-        self.adapters.back()
+        self.adapters.front()
     }
 
     pub fn chat(&self, messages: Vec<Message>) -> Option<Receiver<String>> {
