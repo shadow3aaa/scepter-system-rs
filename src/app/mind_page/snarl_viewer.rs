@@ -1,6 +1,7 @@
 use std::{collections::HashMap, sync::Arc, thread};
 
 use eframe::egui::{Pos2, Ui};
+use egui::Vec2;
 use egui_snarl::{
     ui::{AnyPins, PinInfo, SnarlPin, SnarlViewer, WireStyle},
     InPin, InPinId, NodeId, OutPin, OutPinId, Snarl,
@@ -124,7 +125,7 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
                 parent: snarl[node].concept.parent.clone(),
             });
 
-            println!("input: {}", messages.last().unwrap().content);
+            // println!("input: {}", messages.last().unwrap().content);
 
             {
                 let snarl = self.snarl.clone();
@@ -136,14 +137,13 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
                     };
 
                     let mut parser = ConceptStreamParser::new();
-                    let mut y_offset = 100.0;
-                    let base_pos = snarl.read()[node].rect.center();
-
                     let mut new_nodes: HashMap<usize, NodeId> = HashMap::new();
+
+                    let mut base_pos = snarl.read().get_node_info(node).unwrap().pos + Vec2::new(snarl.read()[node].rect.width() + 50.0, snarl.read()[node].rect.height());
+                    let mut pos = base_pos.clone();
 
                     while let Ok(content) = rx.recv() {
                         /* print!("{content}");
-                         flush stdout
                         let _ = io::stdout().flush(); */
                         let parent_concept = snarl.read()[node].concept.clone();
                         for (index, concept) in
@@ -155,9 +155,13 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
                                     .concept
                                     .clarification
                                     .clone_from(&concept.clarification);
+
+                                pos.y = base_pos.y + snarl.read()[*node].rect.height();
                             } else {
+                                base_pos = pos + Vec2::new(0.0, 100.0);
+
                                 let new_node = snarl.write().insert_node(
-                                    Pos2::new(base_pos.x, base_pos.y + y_offset),
+                                    base_pos,
                                     NodeOfThought::new(Some(parent_concept.clone())),
                                 );
 
@@ -168,8 +172,9 @@ impl SnarlViewer<NodeOfThought> for MindViewer {
                                 };
                                 snarl.write()[node].connect(new_node);
                                 snarl.write().connect(out_pin, in_pin);
-                                y_offset += 80.0;
                                 new_nodes.insert(index, new_node);
+
+                                pos.y = base_pos.y + snarl.read()[new_node].rect.height();
                             }
                         }
                     }

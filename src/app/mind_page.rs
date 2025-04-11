@@ -126,7 +126,7 @@ impl MindPage {
                     self.adapters
                         .write()
                         .adapters
-                        .push_front(self.add_llm_provider_temp.provider.take().unwrap());
+                        .push_back(self.add_llm_provider_temp.provider.take().unwrap());
                     self.add_llm_provider_temp.open_modal = false;
                 }
             })

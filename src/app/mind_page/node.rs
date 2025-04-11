@@ -38,7 +38,7 @@ impl NodeOfThought {
     }
 
     pub fn ui(&mut self, ui: &mut Ui, scale: f32) {
-        Frame::NONE.outer_margin(5.0 * scale).show(ui, |ui| {
+        self.rect = Frame::NONE.outer_margin(5.0 * scale).show(ui, |ui| {
             ui.vertical(|ui| {
                 ui.label(label_text("Concept"));
                 TextEdit::multiline(&mut self.concept.core)
@@ -58,7 +58,7 @@ impl NodeOfThought {
                         .show(ui);
                 }
             });
-        });
+        }).response.rect;
     }
 }
 

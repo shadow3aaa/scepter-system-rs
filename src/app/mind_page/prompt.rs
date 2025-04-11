@@ -147,7 +147,6 @@ impl ConceptStreamParser {
                 },
                 Event::End(ref e) => {
                     if let TagState::Unknown(ref tag) = tag_state {
-                        println!("tag state: {tag_state:?}");
                         if *tag == String::from_utf8_lossy(e.name().into_inner()) {
                             tag_state = TagState::None;
                         }
