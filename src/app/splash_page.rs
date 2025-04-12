@@ -31,17 +31,19 @@ impl Page for SplashPage {
         frame: &mut eframe::Frame,
         nav_controller: &mut crate::framework::NavigationController,
     ) {
+        let progress = self.progress();
+
         ui.horizontal_centered(|ui| {
             ui.vertical_centered_justified(|ui| {
                 ui.label("Logging in...");
-                ui.label(format!("{:.2}%", self.progress() * 100.0));
+                if progress >= 1.0 {
+                    nav_controller
+                        .set_current_page(self.home_page.take().unwrap(), frame.storage_mut().unwrap());
+                } else {
+                    ui.label(format!("{:.2}%", progress * 100.0));
+                }
             })
         });
-
-        if self.progress() >= 1.0 {
-            nav_controller
-                .set_current_page(self.home_page.take().unwrap(), frame.storage_mut().unwrap());
-        }
     }
 
     fn show_side_panel(&self) -> bool {
